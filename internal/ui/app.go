@@ -1,0 +1,256 @@
+package ui
+
+import (
+	"fmt"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"time"
+
+	"avledger/internal/database"
+	"avledger/internal/models"
+	"avledger/internal/pdf"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
+)
+
+// Run initialises and starts the AVLedger application.
+func Run() {
+	a := app.NewWithID("com.avledger.app")
+	a.Settings().SetTheme(theme.DarkTheme())
+
+	w := a.NewWindow("AVLedger — Maintenance Logbook")
+	w.Resize(fyne.NewSize(1280, 760))
+	w.SetMaster()
+
+	// ---- Open DB ----
+	db, err := database.Open()
+	if err != nil {
+		dialog.ShowError(err, w)
+		a.Quit()
+		return
+	}
+	defer db.Close()
+
+	// ---- Load initial data ----
+	entries, err := db.ListEntries()
+	if err != nil {
+		entries = []models.LogEntry{}
+	}
+
+	settings := loadSettings(db)
+
+	// ---- Mutable entry list shared with table ----
+	entryList := entries
+
+	// ---- Build table ----
+	// et declared before callbacks so closures can reference it
+	var et *entryTable
+	var tableContent fyne.CanvasObject
+
+	et, tableContent = buildTable(&entryList, w,
+		// onEdit
+		func(e models.LogEntry) {
+			showEntryForm(w, e, func(updated models.LogEntry) {
+				if err := db.UpdateEntry(updated); err != nil {
+					dialog.ShowError(err, w)
+					return
+				}
+				reloadEntries(db, &entryList, w)
+				et.Refresh()
+			})
+		},
+		// onDelete
+		func(id int64) {
+			if err := db.DeleteEntry(id); err != nil {
+				dialog.ShowError(err, w)
+				return
+			}
+			reloadEntries(db, &entryList, w)
+			et.Refresh()
+		},
+	)
+
+	// ---- Count label (status bar) ----
+	countLabel := widget.NewLabel("")
+	updateCount := func() {
+		n := len(entryList)
+		countLabel.SetText(fmt.Sprintf("%d entr%s nel logbook", n, pluralIt(n)))
+	}
+	updateCount()
+
+	refreshAll := func() {
+		reloadEntries(db, &entryList, w)
+		et.Refresh()
+		updateCount()
+	}
+
+	// ---- Toolbar buttons ----
+	newBtn := widget.NewButtonWithIcon("  Task", theme.ContentAddIcon(), func() {
+		showEntryForm(w, models.LogEntry{}, func(e models.LogEntry) {
+			if _, err := db.CreateEntry(e); err != nil {
+				dialog.ShowError(err, w)
+				return
+			}
+			refreshAll()
+		})
+	})
+	newBtn.Importance = widget.HighImportance
+
+	exportBtn := widget.NewButtonWithIcon("  Esporta PDF", theme.DocumentPrintIcon(), func() {
+		exportToPDF(w, db, &entryList, settings)
+	})
+
+	settingsBtn := widget.NewButtonWithIcon("  Impostazioni", theme.SettingsIcon(), func() {
+		showSettingsDialog(w, db, func(s models.Settings) {
+			settings = s
+		})
+	})
+
+	// ---- DB path bar ----
+	dbIcon := widget.NewIcon(theme.StorageIcon())
+	dbPathLabel := widget.NewLabel(db.Path)
+	dbPathLabel.TextStyle = fyne.TextStyle{Monospace: true}
+	dbPathLabel.Truncation = fyne.TextTruncateEllipsis
+
+	openFolderBtn := widget.NewButtonWithIcon("Apri cartella", theme.FolderOpenIcon(), func() {
+		openFolder(filepath.Dir(db.Path))
+	})
+
+	dbBar := container.NewBorder(nil, nil,
+		container.NewHBox(dbIcon, widget.NewLabel("Database:")),
+		openFolderBtn,
+		dbPathLabel,
+	)
+
+	// ---- Header / title ----
+	titleText := canvas.NewText("AVLedger", theme.PrimaryColor())
+	titleText.TextSize = 22
+	titleText.TextStyle = fyne.TextStyle{Bold: true}
+
+	subtitleText := canvas.NewText("Aircraft Maintenance Logbook", nil)
+	subtitleText.TextSize = 11
+	subtitleText.TextStyle = fyne.TextStyle{Italic: true}
+
+	titleCol := container.NewVBox(titleText, subtitleText)
+
+	toolbar := container.NewHBox(
+		titleCol,
+		widget.NewSeparator(),
+		newBtn,
+		exportBtn,
+		widget.NewSeparator(),
+		settingsBtn,
+	)
+
+	// ---- Assemble layout ----
+	topArea := container.NewVBox(
+		container.NewPadded(toolbar),
+		widget.NewSeparator(),
+		container.NewPadded(dbBar),
+		widget.NewSeparator(),
+	)
+
+	bottomBar := container.NewPadded(
+		container.NewBorder(nil, nil, countLabel, nil),
+	)
+
+	content := container.NewBorder(
+		topArea,
+		bottomBar,
+		nil, nil,
+		container.NewPadded(tableContent),
+	)
+
+	w.SetContent(content)
+	w.ShowAndRun()
+}
+
+// ---- Helpers ----
+
+func reloadEntries(db *database.DB, list *[]models.LogEntry, w fyne.Window) {
+	updated, err := db.ListEntries()
+	if err != nil {
+		dialog.ShowError(err, w)
+		return
+	}
+	*list = updated
+}
+
+func loadSettings(db *database.DB) models.Settings {
+	name, _ := db.GetSetting("holder_name")
+	lic, _ := db.GetSetting("licence_number")
+	return models.Settings{HolderName: name, LicenceNumber: lic}
+}
+
+func exportToPDF(w fyne.Window, db *database.DB, entries *[]models.LogEntry, s models.Settings) {
+	if len(*entries) == 0 {
+		dialog.ShowInformation("Nessun dato",
+			"Il logbook è vuoto. Aggiungi almeno una entry prima di esportare.", w)
+		return
+	}
+
+	saveDialog := dialog.NewFileSave(func(uc fyne.URIWriteCloser, err error) {
+		if err != nil || uc == nil {
+			return
+		}
+		uc.Close() // fpdf writes directly to the file path
+
+		path := uc.URI().Path()
+		if err := pdf.Export(path, *entries, s); err != nil {
+			dialog.ShowError(err, w)
+			return
+		}
+		dialog.ShowInformation("Esportazione completata",
+			fmt.Sprintf("PDF salvato in:\n%s", path), w)
+		openFile(path)
+	}, w)
+
+	saveDialog.SetFileName(fmt.Sprintf("AVLedger_%s.pdf", time.Now().Format("2006-01-02")))
+	saveDialog.SetFilter(storage.NewExtensionFileFilter([]string{".pdf"}))
+	saveDialog.Show()
+}
+
+func openFolder(path string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "linux":
+		cmd = exec.Command("xdg-open", path)
+	case "darwin":
+		cmd = exec.Command("open", path)
+	case "windows":
+		cmd = exec.Command("explorer", path)
+	}
+	if cmd != nil {
+		_ = cmd.Start()
+	}
+}
+
+func openFile(path string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "linux":
+		cmd = exec.Command("xdg-open", path)
+	case "darwin":
+		cmd = exec.Command("open", path)
+	case "windows":
+		cmd = exec.Command("start", path)
+	}
+	if cmd != nil {
+		_ = cmd.Start()
+	}
+}
+
+func pluralIt(n int) string {
+	if n == 1 {
+		return "y"
+	}
+	return "ies"
+}
