@@ -206,12 +206,24 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	pdf.SetFont("Helvetica", "", 8)
 	pdf.CellFormat(35, 5, time.Now().Format("02/01/2006"), "", 0, "L", false, 0, "")
 
-	// ---- Page number ----
+	// ---- Signature field ----
+	sigY := nameY + 8.0
+	const sigLineW = 60.0
+	pdf.SetFont("Helvetica", "B", 8)
+	pdf.SetXY(margin, sigY)
+	pdf.CellFormat(22, 5, "Signature:", "", 0, "L", false, 0, "")
+	// Draw the underline for pen signing
+	pdf.SetDrawColor(0, 0, 0)
+	pdf.SetLineWidth(0.3)
+	sigLineX := margin + 22
+	pdf.Line(sigLineX, sigY+4.5, sigLineX+sigLineW, sigY+4.5)
+
+	// ---- Page number (right-anchored, dynamic width) ----
 	pdf.SetFont("Helvetica", "", 7)
-	pdf.SetXY(margin, pageH-margin-4)
-	pdf.CellFormat(tableW/2, 4, "AVLedger", "", 0, "L", false, 0, "")
-	pdf.CellFormat(tableW/2, 4,
-		fmt.Sprintf("Page %d of %d", pageNum, totalPages), "", 0, "R", false, 0, "")
+	pageLabel := fmt.Sprintf("AVLedger - Page %d of %d", pageNum, totalPages)
+	labelW := pdf.GetStringWidth(pageLabel) + 2.0 // +2mm padding
+	pdf.SetXY(pageW-margin-labelW, pageH-margin-4)
+	pdf.CellFormat(labelW, 4, pageLabel, "", 0, "R", false, 0, "")
 }
 
 // chunkEntries splits entries into slices of at most size elements.
