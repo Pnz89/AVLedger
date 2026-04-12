@@ -40,17 +40,17 @@ func buildTable(
 	// Header row
 	header := container.New(
 		newProportionalLayout(),
-		boldLabel("#"),
-		boldLabel("Date"),
-		boldLabel("Aircraft / Engine"),
-		boldLabel("Reg"),
-		boldLabel("Cat."),
-		boldLabel("Job Type"),
-		boldLabel("ATA"),
-		boldLabel("WO N°"),
-		boldLabel("Task Detail"),
-		boldLabel("Verified by"),
-		boldLabel(""),
+		boldTruncLabel("#"),
+		boldTruncLabel("Date"),
+		boldTruncLabel("Aircraft / Engine"),
+		boldTruncLabel("Reg"),
+		boldTruncLabel("Cat."),
+		boldTruncLabel("Job Type"),
+		boldTruncLabel("ATA"),
+		boldTruncLabel("WO N°"),
+		boldTruncLabel("Task Detail"),
+		boldTruncLabel("Verified by"),
+		boldTruncLabel(""),
 	)
 	headerBg := container.NewPadded(header)
 
@@ -60,17 +60,17 @@ func buildTable(
 		func() fyne.CanvasObject {
 			row := container.New(
 				newProportionalLayout(),
-				widget.NewLabel(""),  // #
-				widget.NewLabel(""),  // date
-				widget.NewLabel(""),  // aircraft
-				widget.NewLabel(""),  // reg
-				widget.NewLabel(""),  // category
-				widget.NewLabel(""),  // job type
-				widget.NewLabel(""),  // ata
-				widget.NewLabel(""),  // wo
-				widget.NewLabel(""),  // task
-				widget.NewLabel(""),  // verified
-				container.NewHBox(   // actions
+				newTruncLabel(""),  // #
+				newTruncLabel(""),  // date
+				newTruncLabel(""),  // aircraft
+				newTruncLabel(""),  // reg
+				newTruncLabel(""),  // category
+				newTruncLabel(""),  // job type
+				newTruncLabel(""),  // ata
+				newTruncLabel(""),  // wo
+				newTruncLabel(""),  // task
+				newTruncLabel(""),  // verified
+				container.NewHBox(  // actions
 					widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil),
 					widget.NewButtonWithIcon("", theme.DeleteIcon(), nil),
 				),
@@ -165,6 +165,22 @@ func (p *proportionalLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	return fyne.NewSize(900, 30)
 }
 
+// newTruncLabel creates a label with ellipsis truncation enabled.
+func newTruncLabel(text string) *widget.Label {
+	lbl := widget.NewLabel(text)
+	lbl.Truncation = fyne.TextTruncateEllipsis
+	return lbl
+}
+
+// boldTruncLabel creates a bold label with ellipsis truncation enabled.
+func boldTruncLabel(text string) *widget.Label {
+	lbl := widget.NewLabel(text)
+	lbl.TextStyle = fyne.TextStyle{Bold: true}
+	lbl.Truncation = fyne.TextTruncateEllipsis
+	return lbl
+}
+
+// boldLabel creates a bold label (kept for compatibility).
 func boldLabel(text string) *widget.Label {
 	lbl := widget.NewLabel(text)
 	lbl.TextStyle = fyne.TextStyle{Bold: true}
