@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"avledger/internal/assets"
@@ -20,6 +21,7 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"fyne.io/fyne/v2/data/binding"
 )
 
 // Run initialises and starts the AVLedger application.
@@ -84,14 +86,26 @@ func Run() {
 		},
 	)
 
-	// ---- Count label (status bar) ----
-	countText := canvas.NewText("", theme.DisabledColor())
-	countText.TextSize = 11
+	// ---- Count label & Time (status bar) ----
+	countText := widget.NewLabel("")
+
+	clockStr := binding.NewString()
+	clockText := widget.NewLabelWithData(clockStr)
+	clockText.TextStyle = fyne.TextStyle{Monospace: true, Italic: true}
+
+	go func() {
+		for {
+			now := time.Now().UTC()
+			datePart := strings.ToUpper(now.Format("02 Jan 2006"))
+			timePart := now.Format("15:04:05 UTC")
+			clockStr.Set(datePart + " " + timePart)
+			time.Sleep(time.Second)
+		}
+	}()
 
 	updateCount := func() {
 		n := len(entryList)
-		countText.Text = fmt.Sprintf("%d entr%s in the logbook", n, pluralIt(n))
-		countText.Refresh()
+		countText.SetText(fmt.Sprintf("%d entr%s in the logbook", n, pluralIt(n)))
 	}
 	updateCount()
 
@@ -182,7 +196,7 @@ func Run() {
 	topArea := container.NewPadded(container.NewVBox(toolsCard, dbCard))
 
 	bottomBar := container.NewPadded(
-		container.NewBorder(nil, nil, countText, nil),
+		container.NewBorder(nil, nil, countText, clockText),
 	)
 
 	content := container.NewBorder(

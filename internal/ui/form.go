@@ -28,7 +28,7 @@ func showEntryForm(parent fyne.Window, existing models.LogEntry, onSave func(mod
 
 	// ---- Fields ----
 	dateEntry := widget.NewEntry()
-	dateEntry.SetPlaceHolder("DD/MM/YYYY")
+	dateEntry.SetPlaceHolder("DD MMM YYYY")
 	dateEntry.SetText(existing.Date)
 
 	aircraftEntry := widget.NewEntry()
