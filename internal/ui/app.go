@@ -58,6 +58,58 @@ func Run() {
 	searchEntry := widget.NewEntry()
 	searchEntry.SetPlaceHolder("Search tasks...")
 
+	acSelect := widget.NewSelect([]string{"(All)"}, nil)
+	regSelect := widget.NewSelect([]string{"(All)"}, nil)
+	catSelect := widget.NewSelect([]string{"(All)"}, nil)
+	jobSelect := widget.NewSelect([]string{"(All)"}, nil)
+
+	acSelect.SetSelected("(All)")
+	regSelect.SetSelected("(All)")
+	catSelect.SetSelected("(All)")
+	jobSelect.SetSelected("(All)")
+
+	updateSelectOptions := func() {
+		if opts, _ := db.GetDistinctValues("aircraft_engine_type"); opts != nil {
+			acSelect.Options = append([]string{"(All)"}, opts...)
+		}
+		if opts, _ := db.GetDistinctValues("reg_marks"); opts != nil {
+			regSelect.Options = append([]string{"(All)"}, opts...)
+		}
+		if opts, _ := db.GetDistinctValues("category"); opts != nil {
+			catSelect.Options = append([]string{"(All)"}, opts...)
+		}
+		if opts, _ := db.GetDistinctValues("job_type"); opts != nil {
+			jobSelect.Options = append([]string{"(All)"}, opts...)
+		}
+	}
+	updateSelectOptions()
+
+	getFilterOptions := func() models.FilterOptions {
+		ac := acSelect.Selected
+		if ac == "(All)" {
+			ac = ""
+		}
+		reg := regSelect.Selected
+		if reg == "(All)" {
+			reg = ""
+		}
+		cat := catSelect.Selected
+		if cat == "(All)" {
+			cat = ""
+		}
+		job := jobSelect.Selected
+		if job == "(All)" {
+			job = ""
+		}
+		return models.FilterOptions{
+			SearchQuery:        searchEntry.Text,
+			AircraftEngineType: ac,
+			RegMarks:           reg,
+			Category:           cat,
+			JobType:            job,
+		}
+	}
+
 	// ---- Build table ----
 	// et declared before callbacks so closures can reference it
 	var et *entryTable
@@ -71,7 +123,8 @@ func Run() {
 					dialog.ShowError(err, w)
 					return
 				}
-				reloadEntries(db, &entryList, w, searchEntry.Text)
+				updateSelectOptions()
+				reloadEntries(db, &entryList, w, getFilterOptions())
 				et.Refresh()
 			})
 		},
@@ -81,7 +134,8 @@ func Run() {
 				dialog.ShowError(err, w)
 				return
 			}
-			reloadEntries(db, &entryList, w, searchEntry.Text)
+			updateSelectOptions()
+			reloadEntries(db, &entryList, w, getFilterOptions())
 			et.Refresh()
 		},
 	)
@@ -110,14 +164,16 @@ func Run() {
 	updateCount()
 
 	refreshAll := func() {
-		reloadEntries(db, &entryList, w, searchEntry.Text)
+		reloadEntries(db, &entryList, w, getFilterOptions())
 		et.Refresh()
 		updateCount()
 	}
 
-	searchEntry.OnChanged = func(s string) {
-		refreshAll()
-	}
+	searchEntry.OnChanged = func(s string) { refreshAll() }
+	acSelect.OnChanged = func(s string) { refreshAll() }
+	regSelect.OnChanged = func(s string) { refreshAll() }
+	catSelect.OnChanged = func(s string) { refreshAll() }
+	jobSelect.OnChanged = func(s string) { refreshAll() }
 
 	// ---- Toolbar buttons ----
 	newBtn := widget.NewButtonWithIcon("  Task", theme.ContentAddIcon(), func() {
@@ -126,6 +182,7 @@ func Run() {
 				dialog.ShowError(err, w)
 				return
 			}
+			updateSelectOptions()
 			refreshAll()
 		})
 	})
@@ -183,13 +240,25 @@ func Run() {
 		settingsBtn,
 	)
 
+	filtersRow := container.NewGridWithColumns(4,
+		container.NewBorder(nil, nil, widget.NewLabel("Aircraft:"), nil, acSelect),
+		container.NewBorder(nil, nil, widget.NewLabel("Reg:"), nil, regSelect),
+		container.NewBorder(nil, nil, widget.NewLabel("Cat:"), nil, catSelect),
+		container.NewBorder(nil, nil, widget.NewLabel("Job:"), nil, jobSelect),
+	)
+
 	searchRow := container.NewBorder(nil, nil, container.NewHBox(widget.NewIcon(theme.SearchIcon()), widget.NewLabel("Search:")), nil, searchEntry)
+
+	searchContainer := container.NewVBox(
+		searchRow,
+		filtersRow,
+	)
 
 	// ---- Assemble layout ----
 	toolsCard := widget.NewCard("", "", container.NewVBox(
 		container.NewPadded(toolbar),
 		widget.NewSeparator(),
-		container.NewPadded(searchRow),
+		container.NewPadded(searchContainer),
 	))
 	dbCard := widget.NewCard("", "", container.NewPadded(dbBar))
 
@@ -212,13 +281,13 @@ func Run() {
 
 // ---- Helpers ----
 
-func reloadEntries(db *database.DB, list *[]models.LogEntry, w fyne.Window, query string) {
+func reloadEntries(db *database.DB, list *[]models.LogEntry, w fyne.Window, opts models.FilterOptions) {
 	var updated []models.LogEntry
 	var err error
-	if query == "" {
+	if opts.SearchQuery == "" && opts.AircraftEngineType == "" && opts.RegMarks == "" && opts.Category == "" && opts.JobType == "" {
 		updated, err = db.ListEntries()
 	} else {
-		updated, err = db.SearchEntries(query)
+		updated, err = db.SearchEntries(opts)
 	}
 	if err != nil {
 		dialog.ShowError(err, w)

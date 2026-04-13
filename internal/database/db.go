@@ -124,23 +124,49 @@ func (db *DB) ListEntries() ([]models.LogEntry, error) {
 	return entries, rows.Err()
 }
 
-// SearchEntries returns log entries that match the given query string.
-func (db *DB) SearchEntries(query string) ([]models.LogEntry, error) {
-	likeQuery := "%" + query + "%"
-	rows, err := db.conn.Query(`
+// SearchEntries returns log entries that match the given filter options.
+func (db *DB) SearchEntries(f models.FilterOptions) ([]models.LogEntry, error) {
+	queryBuilder := `
 		SELECT id, date, aircraft_engine_type, reg_marks, task_detail,
 		       category, job_type, ata, work_order_number, verified_by
 		FROM log_entries
-		WHERE task_detail LIKE ?
+		WHERE 1=1`
+
+	var args []interface{}
+
+	if f.SearchQuery != "" {
+		likeQuery := "%" + f.SearchQuery + "%"
+		queryBuilder += ` AND (task_detail LIKE ?
 		   OR aircraft_engine_type LIKE ?
 		   OR reg_marks LIKE ?
 		   OR category LIKE ?
 		   OR job_type LIKE ?
 		   OR ata LIKE ?
 		   OR work_order_number LIKE ?
-		   OR verified_by LIKE ?
-		ORDER BY id ASC
-	`, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery)
+		   OR verified_by LIKE ?)`
+		args = append(args, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery, likeQuery)
+	}
+
+	if f.AircraftEngineType != "" {
+		queryBuilder += ` AND aircraft_engine_type = ?`
+		args = append(args, f.AircraftEngineType)
+	}
+	if f.RegMarks != "" {
+		queryBuilder += ` AND reg_marks = ?`
+		args = append(args, f.RegMarks)
+	}
+	if f.Category != "" {
+		queryBuilder += ` AND category = ?`
+		args = append(args, f.Category)
+	}
+	if f.JobType != "" {
+		queryBuilder += ` AND job_type = ?`
+		args = append(args, f.JobType)
+	}
+
+	queryBuilder += ` ORDER BY id ASC`
+
+	rows, err := db.conn.Query(queryBuilder, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -196,6 +222,36 @@ func (db *DB) UpdateEntry(e models.LogEntry) error {
 func (db *DB) DeleteEntry(id int64) error {
 	_, err := db.conn.Exec(`DELETE FROM log_entries WHERE id = ?`, id)
 	return err
+}
+
+// GetDistinctValues retrieves a sorted list of unique entries for a specified column.
+func (db *DB) GetDistinctValues(column string) ([]string, error) {
+	validCols := map[string]bool{
+		"aircraft_engine_type": true,
+		"reg_marks":            true,
+		"category":             true,
+		"job_type":             true,
+	}
+	if !validCols[column] {
+		return nil, fmt.Errorf("invalid column: %s", column)
+	}
+
+	query := fmt.Sprintf("SELECT DISTINCT %s FROM log_entries WHERE %s != '' ORDER BY %s ASC", column, column, column)
+	rows, err := db.conn.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var values []string
+	for rows.Next() {
+		var val string
+		if err := rows.Scan(&val); err != nil {
+			return nil, err
+		}
+		values = append(values, val)
+	}
+	return values, rows.Err()
 }
 
 // ---- Settings ----

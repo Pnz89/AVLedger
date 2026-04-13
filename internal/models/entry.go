@@ -20,3 +20,12 @@ type Settings struct {
 	HolderName    string // Logbook holder full name
 	LicenceNumber string // Licence / AML number for PDF footer
 }
+
+// FilterOptions holds user-selected filters for searching entries.
+type FilterOptions struct {
+	SearchQuery        string
+	AircraftEngineType string
+	RegMarks           string
+	Category           string
+	JobType            string
+}
