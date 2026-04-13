@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
+	"time"
 
 	"avledger/internal/models"
 	_ "modernc.org/sqlite"
@@ -115,6 +118,9 @@ func (db *DB) ListEntries() ([]models.LogEntry, error) {
 		}
 		entries = append(entries, e)
 	}
+	if rows.Err() == nil {
+		sortEntriesDesc(entries)
+	}
 	return entries, rows.Err()
 }
 
@@ -150,6 +156,9 @@ func (db *DB) SearchEntries(query string) ([]models.LogEntry, error) {
 			return nil, err
 		}
 		entries = append(entries, e)
+	}
+	if rows.Err() == nil {
+		sortEntriesDesc(entries)
 	}
 	return entries, rows.Err()
 }
@@ -209,4 +218,45 @@ func (db *DB) SetSetting(key, value string) error {
 		key, value,
 	)
 	return err
+}
+
+// ---- Sorting Helpers ----
+
+func parseDate(d string) time.Time {
+	d = strings.TrimSpace(d)
+	formats := []string{
+		"02/01/2006",
+		"2/1/2006",
+		"02/01/06",
+		"2006-01-02",
+		"02 Jan 2006",
+		"2 Jan 2006",
+		"02 JAN 2006",
+		"2 JAN 2006",
+		"02-01-2006",
+		"2-1-2006",
+		"02.01.2006",
+		"2.1.2006",
+		"02-Jan-2006",
+		"2-Jan-2006",
+		"Jan 02, 2006",
+	}
+
+	for _, f := range formats {
+		if t, err := time.Parse(f, d); err == nil {
+			return t
+		}
+	}
+	return time.Time{}
+}
+
+func sortEntriesDesc(entries []models.LogEntry) {
+	sort.SliceStable(entries, func(i, j int) bool {
+		t1 := parseDate(entries[i].Date)
+		t2 := parseDate(entries[j].Date)
+		if t1.Equal(t2) {
+			return entries[i].ID > entries[j].ID
+		}
+		return t1.After(t2)
+	})
 }
