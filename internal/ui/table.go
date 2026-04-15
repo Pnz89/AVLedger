@@ -91,17 +91,17 @@ func buildTable(
 	// Header row
 	header := container.New(
 		newProportionalLayout(),
-		boldTruncLabel("Date"),
-		boldTruncLabel("Aircraft / Engine"),
-		boldTruncLabel("Reg"),
-		boldTruncLabel(" Cat."),
-		boldTruncLabel("Job Type"),
+		boldTruncLabel("DATE"),
+		boldTruncLabel("AIRCRAFT / ENGINE"),
+		boldTruncLabel("REG"),
+		boldTruncLabel(" CAT."),
+		boldTruncLabel("JOB TYPE"),
 		boldTruncLabel("ATA"),
 		boldTruncLabel("WO N°"),
-		boldTruncLabel("Task Detail"),
-		boldTruncLabel("Verified by"),
+		boldTruncLabel("TASK DETAIL"),
+		boldTruncLabel("VERIFIED BY"),
 	)
-	headerBgRect := canvas.NewRectangle(theme.HoverColor())
+	headerBgRect := canvas.NewRectangle(theme.PrimaryColor())
 	headerBg := container.NewStack(headerBgRect, container.NewPadded(header))
 
 	// Data list
