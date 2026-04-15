@@ -13,7 +13,7 @@ import (
 )
 
 // categories available for selection
-var categories = []string{"A", "B1", "B2", "C", "Mech"}
+var categories = []string{"A1", "A2", "A3", "A4", "B1.1", "B1.2", "B1.3", "B1.4", "B2", "B3", "C", "Mech"}
 
 // showEntryForm opens a modal dialog to create or edit a LogEntry.
 // onSave is called with the filled entry when the user confirms.
@@ -48,7 +48,7 @@ func showEntryForm(parent fyne.Window, existing models.LogEntry, onSave func(mod
 	if existing.Category != "" {
 		categorySelect.SetSelected(existing.Category)
 	} else {
-		categorySelect.SetSelected("B1")
+		categorySelect.SetSelected("B1.1")
 	}
 
 	jobTypeEntry := widget.NewEntry()

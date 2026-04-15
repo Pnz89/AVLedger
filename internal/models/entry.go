@@ -8,7 +8,7 @@ type LogEntry struct {
 	AircraftEngineType string // e.g. "B737 NG (CFM56)"
 	RegMarks           string // e.g. "EI-DAZ"
 	TaskDetail         string // Full description of the maintenance task
-	Category           string // A, B1, B2, C, or Mech
+	Category           string // A1, A2, A3, A4, B1.1, B1.2, B1.3, B1.4, B2, B3, C, Mech
 	JobType            string // e.g. Line, Base, Mod
 	ATA                string // ATA chapter code
 	WorkOrderNumber    string
