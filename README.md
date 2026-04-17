@@ -12,7 +12,7 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 
 - 🔧 **Track maintenance tasks** — record every job done on every aircraft, clearly and quickly
 - 📄 **Export to PDF in seconds** — because paperwork should never be the bottleneck
-- 💾 **Backup your database instantly** — SQLite means your data is always one file away from safe
+- 💾 **Own your data** — SQLite means your data is always one file away from safe. Zero subscriptions required.
 
 ---
 
@@ -20,12 +20,13 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 
 | Feature | Description |
 |---|---|
-| 🔧 Task logging | Record maintenance work performed on aircraft with full traceability |
-| 📋 Logbook view | Browse and filter your maintenance history at a glance |
-| ⚡ Fast PDF export | Generate ready-to-print logbooks without waiting |
-| 💾 One-click DB backup | Instant SQLite database backup, no configuration needed |
-| 🪶 Lightweight | Minimal footprint, no unnecessary dependencies |
-| 🔓 FOSS | Free and open-source, forever |
+| 🔧 Task logging | Record maintenance work efficiently including ATA, Job Type, Workorders etc. |
+| 🔍 Advanced filtering | Instantly narrow down your maintenance history by Aircraft, Registration, Category, or Job Type. |
+| ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (with smart text wrapping). |
+| ☁️ Smart Cloud Backup | Automatically detects existing PC sync folders (OneDrive, Dropbox, Google Drive, Nextcloud) and optionally integrates your database for continuous remote backup. |
+| 🎨 Refined UI | A modern, beautiful Fyne-based interface featuring custom themes, zebra-striped tables, and clear visual hierarchy. |
+| 🪶 Lightweight | Minimal footprint, standalone binaries, no heavy unnecessary dependencies. |
+| 🔓 FOSS | Free and open-source, forever. |
 
 ---
 
@@ -33,7 +34,7 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 
 AVLedger is built around **KISS** — *Keep It Simple, Stupid*.
 
-No cloud. No subscriptions. No unnecessary complexity. Just a tool that works, on your machine, under your control. If it doesn't help an AME log a task faster, it doesn't belong in AVLedger.
+No locked-in cloud SaaS. No subscriptions. No unnecessary complexity. Just a tool that works smoothly on your machine, under your control. If it doesn't help an AME log a task faster or export cleaner, it doesn't belong in AVLedger.
 
 ---
 
@@ -57,13 +58,16 @@ go build -o avledger .
 ./avledger
 ```
 
+*(Note: Binaries can be built for Linux, macOS, FreeBSD, and Windows!)*
+
 ---
 
 ## Tech Stack
 
 - **Language:** [Go](https://golang.org/)
+- **UI Framework:** [Fyne](https://fyne.io/)
 - **Database:** [SQLite](https://www.sqlite.org/) — single file, zero setup, easy backup
-- **PDF generation:** built-in Go library
+- **PDF generation:** [go-pdf/fpdf](https://github.com/go-pdf/fpdf)
 
 ---
 
