@@ -20,7 +20,7 @@ const (
 )
 
 // column widths in mm — total must equal pageW - 2*margin = 277mm
-var colWidths = []float64{20, 28, 22, 70, 20, 15, 14, 26, 62}
+var colWidths = []float64{18, 26, 20, 65, 18, 14, 12, 24, 58, 22}
 
 // Export generates an A4 landscape PDF from the provided entries and settings,
 // writing the result to the given file path.
@@ -122,6 +122,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"ATA",
 		"WORK ORDER",
 		"VERIFIED BY",
+		"STAMP",
 	}
 	hLine2 := []string{
 		"",
@@ -133,6 +134,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"",
 		"NUMBER",
 		"(SIGNATURE + AUTH / AML)",
+		"",
 	}
 
 	pdf.SetFont("Helvetica", "B", 7.5)
@@ -180,6 +182,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 			e.ATA,
 			e.WorkOrderNumber,
 			verifiedBy,
+			"", // STAMP column
 		}
 
 		xCol = margin
