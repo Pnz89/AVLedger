@@ -12,7 +12,7 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 
 - 🔧 **Track maintenance tasks** — record every job done on every aircraft, clearly and quickly
 - 📄 **Export to PDF in seconds** — because paperwork should never be the bottleneck
-- 💾 **Own your data** — SQLite means your data is always one file away from safe. Zero subscriptions required.
+- 💾 **Own your data** — SQLite means your data is always one file away from safe. Zero subscriptions required. The software does not track any user data whatsoever, giving you total freedom and absolute control over how you manage your information.
 
 ---
 
@@ -23,7 +23,7 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 | 🔧 Task logging | Record maintenance work efficiently including ATA, Job Type, Workorders etc. |
 | 🔍 Advanced filtering | Instantly narrow down your maintenance history by Aircraft, Registration, Category, or Job Type. |
 | ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (with smart text wrapping). |
-| ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, etc.). Features **Auto-Discovery** to magically reconnect to an existing cloud database on fresh installations without user intervention. |
+| ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, OneDrive, Dropbox). Features **Auto-Discovery** to magically reconnect to an existing cloud database on fresh installations without user intervention. |
 | 💽 Hot-swappable DB | Full manual control. Connect to or switch between any local/remote SQLite database files instantly from the UI without restarting. |
 | 🎨 Refined UI | A modern, minimal Fyne-based interface featuring custom themes, zebra-striped tables, and clear visual hierarchy. |
 | 🪶 Lightweight | Minimal footprint, standalone binaries, no heavy unnecessary dependencies. |
