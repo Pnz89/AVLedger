@@ -11,6 +11,7 @@ import (
 
 	"avledger/internal/models"
 	_ "modernc.org/sqlite"
+	"io"
 )
 
 // DB wraps the sql.DB handle and exposes all CRUD operations.
@@ -19,22 +20,29 @@ type DB struct {
 	Path string
 }
 
-// Open opens (or creates) the SQLite database at the standard data path.
-func Open() (*DB, error) {
-	dataDir, err := os.UserConfigDir()
-	if err != nil {
-		dataDir, err = os.UserHomeDir()
+// Open opens (or creates) the SQLite database at the specified path. If empty, defaults to standard config dir.
+func Open(customPath string) (*DB, error) {
+	var path, dir string
+
+	if customPath != "" {
+		path = customPath
+		dir = filepath.Dir(path)
+	} else {
+		dataDir, err := os.UserConfigDir()
 		if err != nil {
-			return nil, fmt.Errorf("cannot determine data directory: %w", err)
+			dataDir, err = os.UserHomeDir()
+			if err != nil {
+				return nil, fmt.Errorf("cannot determine data directory: %w", err)
+			}
 		}
+		dir = filepath.Join(dataDir, "avledger")
+		path = filepath.Join(dir, "avledger.db")
 	}
 
-	dir := filepath.Join(dataDir, "avledger")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("cannot create data directory: %w", err)
 	}
 
-	path := filepath.Join(dir, "avledger.db")
 	conn, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open database: %w", err)
@@ -45,6 +53,63 @@ func Open() (*DB, error) {
 		return nil, fmt.Errorf("migration failed: %w", err)
 	}
 	return db, nil
+}
+
+// MoveTo safely closes the active connection, physically moves the database to the target directory,
+// reopens the connection, and updates the db context struct seamlessly.
+func (db *DB) MoveTo(newDir string) error {
+	if err := db.Close(); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(newDir, 0755); err != nil {
+		return err
+	}
+
+	newPath := filepath.Join(newDir, "avledger.db")
+
+	if err := moveFile(db.Path, newPath); err != nil {
+		// attempt fallback reopen
+		db.conn, _ = sql.Open("sqlite", db.Path)
+		return err
+	}
+
+	conn, err := sql.Open("sqlite", newPath)
+	if err != nil {
+		return err
+	}
+	db.conn = conn
+	db.Path = newPath
+
+	return nil
+}
+
+// moveFile bridges file relocation smoothly bridging partitions.
+func moveFile(src, dst string) error {
+	err := os.Rename(src, dst)
+	if err == nil {
+		return nil
+	}
+	// Fallback to copy+delete if os.Rename fails (e.g. across drives)
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	if _, err = io.Copy(out, in); err != nil {
+		return err
+	}
+	out.Sync()
+
+	in.Close() // Must close explicitly before remove
+	return os.Remove(src)
 }
 
 // migrate creates the schema if it does not exist.

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -36,7 +37,8 @@ func Run() {
 	w.SetMaster()
 
 	// ---- Open DB ----
-	db, err := database.Open()
+	customDBPath := a.Preferences().StringWithFallback("dbPath", "")
+	db, err := database.Open(customDBPath)
 	if err != nil {
 		dialog.ShowError(err, w)
 		a.Quit()
@@ -276,6 +278,28 @@ func Run() {
 	)
 
 	w.SetContent(content)
+
+	// ---- Cloud Backup Prompter ----
+	if !a.Preferences().Bool("cloudPrompted") {
+		if targetFolder := detectCloudSync(db.Path); targetFolder != "" {
+			dialog.ShowConfirm("Cloud Backup Detected",
+				fmt.Sprintf("We detected a cloud sync folder on your PC (%s).\n\nWould you like to move the AVLedger database there to automatically back it up?", filepath.Base(targetFolder)),
+				func(yes bool) {
+					a.Preferences().SetBool("cloudPrompted", true)
+					if yes {
+						dest := filepath.Join(targetFolder, "AVLedger")
+						if err := db.MoveTo(dest); err != nil {
+							dialog.ShowError(err, w)
+							return
+						}
+						a.Preferences().SetString("dbPath", db.Path)
+						dbPathLabel.SetText(db.Path)
+						dialog.ShowInformation("Success", "Database moved securely and backup initialized.", w)
+					}
+				}, w)
+		}
+	}
+
 	w.ShowAndRun()
 }
 
@@ -365,4 +389,43 @@ func pluralIt(n int) string {
 		return "y"
 	}
 	return "ies"
+}
+
+func detectCloudSync(currentDBPath string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	targets := []string{
+		filepath.Join(home, "Dropbox"),
+		filepath.Join(home, "OneDrive"),
+		filepath.Join(home, "Google Drive"),
+		filepath.Join(home, "Nextcloud"),
+		filepath.Join(home, "ownCloud"),
+		filepath.Join(home, "pCloudDrive"),
+	}
+
+	// For Mac, also check Library/CloudStorage
+	if runtime.GOOS == "darwin" {
+		cloudStorage := filepath.Join(home, "Library", "CloudStorage")
+		if entries, err := os.ReadDir(cloudStorage); err == nil {
+			for _, e := range entries {
+				if e.IsDir() {
+					targets = append(targets, filepath.Join(cloudStorage, e.Name()))
+				}
+			}
+		}
+	}
+
+	for _, t := range targets {
+		if info, err := os.Stat(t); err == nil && info.IsDir() {
+			// Ensure it's not already within a cloud folder
+			if !strings.HasPrefix(currentDBPath, t) {
+				return t // suggest the first match
+			}
+		}
+	}
+
+	return ""
 }
