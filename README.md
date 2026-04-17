@@ -51,7 +51,7 @@ No locked-in cloud SaaS. No subscriptions. No unnecessary complexity. Just a too
 #### Linux, macOS, FreeBSD
 
 ```bash
-git clone https://github.com/Pnz89/avledger.git
+git clone https://github.com/Penaz89/avledger.git
 cd avledger
 go build -o avledger .
 ```
