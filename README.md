@@ -64,7 +64,7 @@ go build -o avledger .
 #### Windows
 
 ```powershell
-git clone https://github.com/Pnz89/avledger.git
+git clone https://github.com/Penaz89/avledger.git
 cd avledger
 go build -o avledger.exe .
 ```

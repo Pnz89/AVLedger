@@ -139,7 +139,7 @@ func Run() {
 	et, tableContent = buildTable(&entryList, w,
 		// onEdit
 		func(e models.LogEntry) {
-			showEntryForm(w, e, func(updated models.LogEntry) {
+			showEntryForm(w, db, e, func(updated models.LogEntry) {
 				if err := db.UpdateEntry(updated); err != nil {
 					dialog.ShowError(err, w)
 					return
@@ -198,7 +198,7 @@ func Run() {
 
 	// ---- Toolbar buttons ----
 	newBtn := widget.NewButtonWithIcon("  Task", theme.ContentAddIcon(), func() {
-		showEntryForm(w, models.LogEntry{}, func(e models.LogEntry) {
+		showEntryForm(w, db, models.LogEntry{}, func(e models.LogEntry) {
 			if _, err := db.CreateEntry(e); err != nil {
 				dialog.ShowError(err, w)
 				return
@@ -217,6 +217,10 @@ func Run() {
 		showSettingsDialog(w, db, func(s models.Settings) {
 			settings = s
 		})
+	})
+
+	assessorsBtn := widget.NewButtonWithIcon("  Assessors", theme.AccountIcon(), func() {
+		showAssessorsDialog(w, db)
 	})
 
 	// ---- DB path bar ----
@@ -297,6 +301,7 @@ func Run() {
 		newBtn,
 		exportBtn,
 		widget.NewSeparator(),
+		assessorsBtn,
 		settingsBtn,
 	)
 
@@ -432,7 +437,7 @@ func exportToPDF(w fyne.Window, db *database.DB, entries *[]models.LogEntry, s m
 		uc.Close() // fpdf writes directly to the file path
 
 		path := uc.URI().Path()
-		if err := pdf.Export(path, *entries, s); err != nil {
+		if err := pdf.Export(path, *entries, s, db); err != nil {
 			dialog.ShowError(err, w)
 			return
 		}

@@ -159,6 +159,13 @@ func (db *DB) migrate() error {
 			key   TEXT PRIMARY KEY,
 			value TEXT NOT NULL DEFAULT ''
 		);
+
+		CREATE TABLE IF NOT EXISTS assessors (
+			id               INTEGER PRIMARY KEY AUTOINCREMENT,
+			name             TEXT    NOT NULL UNIQUE,
+			license_number   TEXT    NOT NULL DEFAULT '',
+			company_approval TEXT    NOT NULL DEFAULT ''
+		);
 	`)
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"avledger/internal/database"
 	"avledger/internal/models"
 
 	"fyne.io/fyne/v2"
@@ -19,7 +20,7 @@ var categories = []string{"A1", "A2", "A3", "A4", "B1.1", "B1.2", "B1.3", "B1.4"
 // showEntryForm opens a modal dialog to create or edit a LogEntry.
 // onSave is called with the filled entry when the user confirms.
 // If editing, pass the existing entry; for new entries pass an empty LogEntry.
-func showEntryForm(parent fyne.Window, existing models.LogEntry, onSave func(models.LogEntry)) {
+func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry, onSave func(models.LogEntry)) {
 	isNew := existing.ID == 0
 
 	title := "New Task"
@@ -68,10 +69,15 @@ func showEntryForm(parent fyne.Window, existing models.LogEntry, onSave func(mod
 	woEntry.SetPlaceHolder("Work Order Number")
 	woEntry.SetText(existing.WorkOrderNumber)
 
-	verifiedEntry := widget.NewMultiLineEntry()
-	verifiedEntry.SetPlaceHolder("Name + authorisation n° / AML")
+	assessors, _ := db.ListAssessors()
+	var assessorNames []string
+	for _, a := range assessors {
+		assessorNames = append(assessorNames, a.Name)
+	}
+
+	verifiedEntry := widget.NewSelectEntry(assessorNames)
+	verifiedEntry.SetPlaceHolder("Select or type Assessor name")
 	verifiedEntry.SetText(existing.VerifiedBy)
-	verifiedEntry.SetMinRowsVisible(2)
 
 	// ---- Layout ----
 	form := widget.NewForm(

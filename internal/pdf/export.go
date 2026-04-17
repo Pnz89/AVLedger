@@ -3,9 +3,11 @@ package pdf
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
 	"avledger/internal/assets"
+	"avledger/internal/database"
 	"avledger/internal/models"
 
 	"github.com/go-pdf/fpdf"
@@ -22,7 +24,7 @@ var colWidths = []float64{20, 28, 22, 70, 20, 15, 14, 26, 62}
 
 // Export generates an A4 landscape PDF from the provided entries and settings,
 // writing the result to the given file path.
-func Export(path string, entries []models.LogEntry, s models.Settings) error {
+func Export(path string, entries []models.LogEntry, s models.Settings, db *database.DB) error {
 	pdf := fpdf.NewCustom(&fpdf.InitType{
 		OrientationStr: "L",
 		UnitStr:        "mm",
@@ -47,14 +49,14 @@ func Export(path string, entries []models.LogEntry, s models.Settings) error {
 
 	for pageIdx, pageEntries := range pages {
 		pdf.AddPage()
-		drawPage(pdf, pageEntries, s, pageIdx+1, len(pages))
+		drawPage(pdf, pageEntries, s, pageIdx+1, len(pages), db)
 	}
 
 	return pdf.OutputFileAndClose(path)
 }
 
 // drawPage renders a single page of the logbook.
-func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, pageNum, totalPages int) {
+func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, pageNum, totalPages int, db *database.DB) {
 	// ---- Table geometry ----
 	const (
 		headerH    = 12.0 // total header height (two sub-rows of 6mm each)
@@ -153,6 +155,21 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 			e = entries[i]
 		}
 
+		verifiedBy := e.VerifiedBy
+		if db != nil && verifiedBy != "" {
+			if a, err := db.GetAssessorByName(verifiedBy); err == nil {
+				var parts []string
+				parts = append(parts, a.Name)
+				if a.LicenseNumber != "" {
+					parts = append(parts, a.LicenseNumber)
+				}
+				if a.CompanyApproval != "" {
+					parts = append(parts, a.CompanyApproval)
+				}
+				verifiedBy = strings.Join(parts, " - ")
+			}
+		}
+
 		cells := []string{
 			e.Date,
 			e.AircraftEngineType,
@@ -162,7 +179,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 			e.JobType,
 			e.ATA,
 			e.WorkOrderNumber,
-			e.VerifiedBy,
+			verifiedBy,
 		}
 
 		xCol = margin
