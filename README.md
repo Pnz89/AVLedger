@@ -23,7 +23,8 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 | 🔧 Task logging | Record maintenance work efficiently including ATA, Job Type, Workorders etc. |
 | 🔍 Advanced filtering | Instantly narrow down your maintenance history by Aircraft, Registration, Category, or Job Type. |
 | ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (with smart text wrapping). |
-| ☁️ Smart Cloud Backup | Automatically detects existing PC sync folders (OneDrive, Dropbox, Google Drive, Nextcloud) and optionally integrates your database for continuous remote backup. |
+| ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, etc.). Features **Auto-Discovery** to magically reconnect to an existing cloud database on fresh installations without user intervention. |
+| 💽 Hot-swappable DB | Full manual control. Connect to or switch between any local/remote SQLite database files instantly from the UI without restarting. |
 | 🎨 Refined UI | A modern, minimal Fyne-based interface featuring custom themes, zebra-striped tables, and clear visual hierarchy. |
 | 🪶 Lightweight | Minimal footprint, standalone binaries, no heavy unnecessary dependencies. |
 | 🔓 FOSS | Free and open-source, forever. |
