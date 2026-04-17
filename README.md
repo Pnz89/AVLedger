@@ -22,6 +22,7 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 | Feature | Description |
 |---|---|
 | 🔧 Task logging | Record maintenance work efficiently including ATA, Job Type, Workorders etc. |
+| 📋 Assessor Management | Store and manage Assessor details (Name, License, Company Approval). Quickly select them on tasks, and automatically expand their full details on PDF export. |
 | 🔍 Advanced filtering | Instantly narrow down your maintenance history by Aircraft, Registration, Category, or Job Type. |
 | ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (with smart text wrapping). |
 | ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, OneDrive, Dropbox). Features **Auto-Discovery** to "magically" reconnect to an existing cloud database on fresh installations without user intervention. |
