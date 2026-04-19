@@ -106,8 +106,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	// Horizontal separator: header / data area
 	pdf.Line(margin, tableTop+headerH, margin+tableW, tableTop+headerH)
 
-	// Horizontal separator between the two header sub-rows
-	pdf.Line(margin, tableTop+headerH/2, margin+tableW, tableTop+headerH/2)
+	// (Horizontal separator between the two header sub-rows removed as requested)
 
 	// Horizontal separators between data rows
 	for i := 1; i < rowsOnPage; i++ {
