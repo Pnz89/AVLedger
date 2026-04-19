@@ -81,12 +81,12 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	// ===========================================================
 	// Grid: draw background fills first, then borders
 	// ===========================================================
-	
+
 	// ---- Background Fills ----
 	// Header fill
 	pdf.SetFillColor(190, 200, 210) // Darker for B&W print
 	pdf.Rect(margin, tableTop, tableW, headerH, "F")
-	
+
 	// Zebra striping for data rows
 	pdf.SetFillColor(235, 240, 245) // Darker zebra striping
 	for i := 0; i < rowsOnPage; i++ {
@@ -134,7 +134,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"ATA",
 		"WORK ORDER",
 		"VERIFIED BY",
-		"STAMP",
+		"STAMP /",
 	}
 	hLine2 := []string{
 		"",
@@ -145,8 +145,8 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"",
 		"",
 		"NUMBER",
-		"(SIGNATURE + AUTH / AML)",
-		"",
+		"(AUTH / AML)",
+		"SIGNATURE",
 	}
 
 	pdf.SetTextColor(20, 20, 20) // Very dark text for headers
