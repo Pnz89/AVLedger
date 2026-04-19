@@ -283,7 +283,7 @@ func Run() {
 	titleText.TextSize = 22
 	titleText.TextStyle = fyne.TextStyle{Bold: true}
 
-	versionText := canvas.NewText("0.5.1", theme.DisabledColor())
+	versionText := canvas.NewText("0.5.2", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 

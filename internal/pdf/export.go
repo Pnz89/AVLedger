@@ -20,7 +20,7 @@ const (
 )
 
 // column widths in mm — total must equal pageW - 2*margin = 277mm
-var colWidths = []float64{18, 26, 20, 65, 18, 14, 12, 24, 58, 22}
+var colWidths = []float64{18, 26, 20, 57, 18, 14, 12, 22, 16, 52, 22}
 
 // Export generates an A4 landscape PDF from the provided entries and settings,
 // writing the result to the given file path.
@@ -133,6 +133,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"JOB TYPE",
 		"ATA",
 		"WORK ORDER",
+		"DURATION",
 		"VERIFIED BY",
 		"STAMP /",
 	}
@@ -145,6 +146,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"",
 		"",
 		"NUMBER",
+		"(HOURS)",
 		"(AUTH / AML)",
 		"SIGNATURE",
 	}
@@ -195,6 +197,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 			e.JobType,
 			e.ATA,
 			e.WorkOrderNumber,
+			e.Duration,
 			verifiedBy,
 			"", // STAMP column
 		}
@@ -203,11 +206,11 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		for j, cell := range cells {
 			pdf.SetXY(xCol, y)
 			align := "C"
-			if j == 3 || j == 8 {
+			if j == 3 || j == 9 {
 				align = "L"
 			}
 			style := ""
-			if hasData && (j == 3 || j == 8) {
+			if hasData && (j == 3 || j == 9) {
 				style = "I"
 			}
 			fitCellText(pdf, colWidths[j], rowH, cell, style, align)

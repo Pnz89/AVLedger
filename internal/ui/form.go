@@ -69,6 +69,10 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 	woEntry.SetPlaceHolder("Work Order Number")
 	woEntry.SetText(existing.WorkOrderNumber)
 
+	durationEntry := widget.NewEntry()
+	durationEntry.SetPlaceHolder("e.g. 2.5")
+	durationEntry.SetText(existing.Duration)
+
 	assessors, _ := db.ListAssessors()
 	var assessorNames []string
 	for _, a := range assessors {
@@ -89,6 +93,7 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 		widget.NewFormItem("Job type", jobTypeEntry),
 		widget.NewFormItem("ATA", ataEntry),
 		widget.NewFormItem("Work Order N°", woEntry),
+		widget.NewFormItem("Duration (hrs)", durationEntry),
 		widget.NewFormItem("Verified by", verifiedEntry),
 	)
 
@@ -139,6 +144,7 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 			JobType:            strings.TrimSpace(jobTypeEntry.Text),
 			ATA:                strings.TrimSpace(ataEntry.Text),
 			WorkOrderNumber:    strings.TrimSpace(woEntry.Text),
+			Duration:           strings.TrimSpace(durationEntry.Text),
 			VerifiedBy:         strings.TrimSpace(verifiedEntry.Text),
 		}
 		w.Close()

@@ -12,6 +12,7 @@ type LogEntry struct {
 	JobType            string // e.g. Line, Base, Mod
 	ATA                string // ATA chapter code
 	WorkOrderNumber    string
+	Duration           string // Task duration in hours, e.g. "2.5"
 	VerifiedBy         string // Name + authorisation number / AML number
 }
 
