@@ -72,15 +72,32 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	pdf.ImageOptions("logo", pageW-margin-18, margin, 18, 18, false, fpdf.ImageOptions{ImageType: "png", ReadDpi: true}, 0, "")
 
 	// ---- Title ----
-	pdf.SetFont("Helvetica", "B", 11)
+	pdf.SetFont("Helvetica", "B", 12)
+	pdf.SetTextColor(30, 41, 59) // Slate 800
 	pdf.SetXY(margin, margin+11)
 	pdf.CellFormat(tableW, 7, "MAINTENANCE EXPERIENCE RECORD", "", 0, "L", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
 
 	// ===========================================================
-	// Grid: draw all borders first with Line/Rect, then add text.
-	// This guarantees every line is present and connected.
+	// Grid: draw background fills first, then borders
 	// ===========================================================
-	pdf.SetDrawColor(0, 0, 0)
+	
+	// ---- Background Fills ----
+	// Header fill
+	pdf.SetFillColor(226, 232, 240) // Slate 200
+	pdf.Rect(margin, tableTop, tableW, headerH, "F")
+	
+	// Zebra striping for data rows
+	pdf.SetFillColor(248, 250, 252) // Slate 50
+	for i := 0; i < rowsOnPage; i++ {
+		if i%2 != 0 {
+			y := tableTop + headerH + float64(i)*rowH
+			pdf.Rect(margin, y, tableW, rowH, "F")
+		}
+	}
+
+	// ---- Borders ----
+	pdf.SetDrawColor(148, 163, 184) // Slate 400 (softer borders)
 	pdf.SetLineWidth(0.3)
 
 	// Outer border of the whole table
@@ -104,10 +121,6 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		xCol += colWidths[i]
 		pdf.Line(xCol, tableTop, xCol, tableTop+tableH)
 	}
-
-	// ---- Header fill ----
-	pdf.SetFillColor(220, 220, 220)
-	pdf.Rect(margin, tableTop, tableW, headerH, "F")
 
 	// ---- Header text (two sub-rows per column) ----
 	subH := headerH / 2.0
@@ -137,6 +150,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"",
 	}
 
+	pdf.SetTextColor(71, 85, 105) // Slate 600
 	pdf.SetFont("Helvetica", "B", 7.5)
 	xCol = margin
 	for i, txt := range hLine1 {
@@ -146,6 +160,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		pdf.CellFormat(colWidths[i], subH, hLine2[i], "", 0, "C", false, 0, "")
 		xCol += colWidths[i]
 	}
+	pdf.SetTextColor(0, 0, 0) // Reset to black
 
 	// ---- Data rows ----
 	for i := 0; i < rowsOnPage; i++ {
@@ -203,11 +218,13 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 
 	// ---- Footer ----
 	footerTop := tableTop + tableH + 3.5
-	pdf.SetFont("Helvetica", "", 8)
+	pdf.SetFont("Helvetica", "I", 8)
+	pdf.SetTextColor(100, 100, 100)
 	pdf.SetXY(margin, footerTop)
 	pdf.CellFormat(tableW, 5,
 		"I hereby declare that the information given on this logbook page is true in every respect",
 		"", 1, "L", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
 
 	nameY := footerTop + 6.5
 	pdf.SetFont("Helvetica", "B", 8)
@@ -233,17 +250,19 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	pdf.SetXY(margin, sigY)
 	pdf.CellFormat(22, 5, "Signature:", "", 0, "L", false, 0, "")
 	// Draw the underline for pen signing
-	pdf.SetDrawColor(0, 0, 0)
+	pdf.SetDrawColor(148, 163, 184) // Slate 400
 	pdf.SetLineWidth(0.3)
 	sigLineX := margin + 22
 	pdf.Line(sigLineX, sigY+4.5, sigLineX+sigLineW, sigY+4.5)
 
 	// ---- Page number (right-anchored, dynamic width) ----
 	pdf.SetFont("Helvetica", "", 7)
+	pdf.SetTextColor(148, 163, 184) // Slate 400
 	pageLabel := fmt.Sprintf("AVLedger - Page %d of %d", pageNum, totalPages)
 	labelW := pdf.GetStringWidth(pageLabel) + 2.0 // +2mm padding
 	pdf.SetXY(pageW-margin-labelW, pageH-margin-4)
 	pdf.CellFormat(labelW, 4, pageLabel, "", 0, "R", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
 }
 
 // chunkEntries splits entries into slices of at most size elements.
