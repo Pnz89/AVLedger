@@ -1,5 +1,9 @@
 # ✈️ AVLedger
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Pnz89/AVLedger?color=00add8)](https://golang.org/)
+[![GitHub Release](https://img.shields.io/github/v/release/Pnz89/AVLedger)](https://github.com/Pnz89/AVLedger/releases)
+
 **AVLedger** is a minimalist, open-source, EASA based digital logbook for **Aircraft Maintenance Engineers (AME)** — built with Go, designed with the [KISS principle](https://en.wikipedia.org/wiki/KISS_principle).
 Made for engineers from engineers.
 
