@@ -14,7 +14,6 @@ type CustomTheme struct{}
 
 var _ fyne.Theme = (*CustomTheme)(nil)
 
-// Color returns custom colors for the theme
 func (m *CustomTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	// Aviation blue primary color
 	if name == theme.ColorNamePrimary {

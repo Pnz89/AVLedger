@@ -84,11 +84,11 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	
 	// ---- Background Fills ----
 	// Header fill
-	pdf.SetFillColor(226, 232, 240) // Slate 200
+	pdf.SetFillColor(190, 200, 210) // Darker for B&W print
 	pdf.Rect(margin, tableTop, tableW, headerH, "F")
 	
 	// Zebra striping for data rows
-	pdf.SetFillColor(248, 250, 252) // Slate 50
+	pdf.SetFillColor(235, 240, 245) // Darker zebra striping
 	for i := 0; i < rowsOnPage; i++ {
 		if i%2 != 0 {
 			y := tableTop + headerH + float64(i)*rowH
@@ -97,7 +97,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	}
 
 	// ---- Borders ----
-	pdf.SetDrawColor(148, 163, 184) // Slate 400 (softer borders)
+	pdf.SetDrawColor(80, 90, 100) // Darker borders
 	pdf.SetLineWidth(0.3)
 
 	// Outer border of the whole table
@@ -149,7 +149,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 		"",
 	}
 
-	pdf.SetTextColor(71, 85, 105) // Slate 600
+	pdf.SetTextColor(20, 20, 20) // Very dark text for headers
 	pdf.SetFont("Helvetica", "B", 7.5)
 	xCol = margin
 	for i, txt := range hLine1 {
@@ -218,7 +218,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	// ---- Footer ----
 	footerTop := tableTop + tableH + 3.5
 	pdf.SetFont("Helvetica", "I", 8)
-	pdf.SetTextColor(100, 100, 100)
+	pdf.SetTextColor(50, 50, 50)
 	pdf.SetXY(margin, footerTop)
 	pdf.CellFormat(tableW, 5,
 		"I hereby declare that the information given on this logbook page is true in every respect",
@@ -249,14 +249,14 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	pdf.SetXY(margin, sigY)
 	pdf.CellFormat(22, 5, "Signature:", "", 0, "L", false, 0, "")
 	// Draw the underline for pen signing
-	pdf.SetDrawColor(148, 163, 184) // Slate 400
+	pdf.SetDrawColor(80, 90, 100)
 	pdf.SetLineWidth(0.3)
 	sigLineX := margin + 22
 	pdf.Line(sigLineX, sigY+4.5, sigLineX+sigLineW, sigY+4.5)
 
 	// ---- Page number (right-anchored, dynamic width) ----
 	pdf.SetFont("Helvetica", "", 7)
-	pdf.SetTextColor(148, 163, 184) // Slate 400
+	pdf.SetTextColor(80, 90, 100)
 	pageLabel := fmt.Sprintf("AVLedger - Page %d of %d", pageNum, totalPages)
 	labelW := pdf.GetStringWidth(pageLabel) + 2.0 // +2mm padding
 	pdf.SetXY(pageW-margin-labelW, pageH-margin-4)
