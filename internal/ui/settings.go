@@ -38,7 +38,7 @@ func showSettingsDialog(parent fyne.Window, db *database.DB, onSave func(models.
 
 	content := container.NewVBox(form, note)
 
-	var d dialog.Dialog
+	var w fyne.Window
 
 	saveBtn := widget.NewButtonWithIcon("Save settings", theme.DocumentSaveIcon(), func() {
 		_ = db.SetSetting("holder_name", nameEntry.Text)
@@ -47,19 +47,20 @@ func showSettingsDialog(parent fyne.Window, db *database.DB, onSave func(models.
 			HolderName:    nameEntry.Text,
 			LicenceNumber: licenceEntry.Text,
 		})
-		d.Hide()
+		w.Close()
 		dialog.ShowInformation("Saved", "Settings saved successfully.", parent)
 	})
 	saveBtn.Importance = widget.HighImportance
 
 	cancelBtn := widget.NewButtonWithIcon("Cancel", theme.CancelIcon(), func() {
-		d.Hide()
+		w.Close()
 	})
 
 	buttons := container.NewHBox(cancelBtn, saveBtn)
 	fullContent := container.NewBorder(nil, buttons, nil, nil, content)
 
-	d = dialog.NewCustom("Settings", "✕", fullContent, parent)
-	d.Resize(fyne.NewSize(420, 220))
-	d.Show()
+	w = fyne.CurrentApp().NewWindow("Settings")
+	w.SetContent(container.NewPadded(fullContent))
+	w.Resize(fyne.NewSize(420, 250))
+	w.Show()
 }

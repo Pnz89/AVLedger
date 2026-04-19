@@ -13,7 +13,7 @@ import (
 
 // showAssessorsDialog opens a window to manage the list of assessors.
 func showAssessorsDialog(parent fyne.Window, db *database.DB) {
-	var d dialog.Dialog
+	var w fyne.Window
 	var list *widget.List
 	var currentAssessors []models.Assessor
 
@@ -61,7 +61,7 @@ func showAssessorsDialog(parent fyne.Window, db *database.DB) {
 	addBtn.Importance = widget.HighImportance
 
 	closeBtn := widget.NewButtonWithIcon("Close", theme.CancelIcon(), func() {
-		d.Hide()
+		w.Close()
 	})
 
 	buttons := container.NewHBox(closeBtn, widget.NewSeparator(), addBtn)
@@ -72,9 +72,10 @@ func showAssessorsDialog(parent fyne.Window, db *database.DB) {
 		list,
 	)
 
-	d = dialog.NewCustom("Manage Assessors", "✕", content, parent)
-	d.Resize(fyne.NewSize(450, 350))
-	d.Show()
+	w = fyne.CurrentApp().NewWindow("Manage Assessors")
+	w.SetContent(container.NewPadded(content))
+	w.Resize(fyne.NewSize(450, 350))
+	w.Show()
 }
 
 func showAssessorForm(parent fyne.Window, db *database.DB, existing models.Assessor, onComplete func()) {
@@ -102,11 +103,11 @@ func showAssessorForm(parent fyne.Window, db *database.DB, existing models.Asses
 		widget.NewFormItem("Company Approval", approvalEntry),
 	)
 
-	var d dialog.Dialog
+	var w fyne.Window
 
 	saveBtn := widget.NewButtonWithIcon("Save", theme.DocumentSaveIcon(), func() {
 		if nameEntry.Text == "" {
-			dialog.ShowInformation("Missing field", "Name is required.", parent)
+			dialog.ShowInformation("Missing field", "Name is required.", w)
 			return
 		}
 
@@ -116,16 +117,16 @@ func showAssessorForm(parent fyne.Window, db *database.DB, existing models.Asses
 
 		if isNew {
 			if _, err := db.CreateAssessor(existing); err != nil {
-				dialog.ShowError(err, parent)
+				dialog.ShowError(err, w)
 				return
 			}
 		} else {
 			if err := db.UpdateAssessor(existing); err != nil {
-				dialog.ShowError(err, parent)
+				dialog.ShowError(err, w)
 				return
 			}
 		}
-		d.Hide()
+		w.Close()
 		if onComplete != nil {
 			onComplete()
 		}
@@ -136,28 +137,29 @@ func showAssessorForm(parent fyne.Window, db *database.DB, existing models.Asses
 		dialog.ShowConfirm("Confirm", "Are you sure you want to delete this assessor?", func(yes bool) {
 			if yes {
 				if err := db.DeleteAssessor(existing.ID); err != nil {
-					dialog.ShowError(err, parent)
+					dialog.ShowError(err, w)
 					return
 				}
-				d.Hide()
+				w.Close()
 				if onComplete != nil {
 					onComplete()
 				}
 			}
-		}, parent)
+		}, w)
 	})
 	if isNew {
 		delBtn.Hide()
 	}
 
 	cancelBtn := widget.NewButtonWithIcon("Cancel", theme.CancelIcon(), func() {
-		d.Hide()
+		w.Close()
 	})
 
 	buttons := container.NewHBox(delBtn, widget.NewSeparator(), cancelBtn, saveBtn)
 	content := container.NewBorder(nil, buttons, nil, nil, container.NewVBox(form))
 
-	d = dialog.NewCustom(title, "✕", content, parent)
-	d.Resize(fyne.NewSize(450, 250))
-	d.Show()
+	w = fyne.CurrentApp().NewWindow(title)
+	w.SetContent(container.NewPadded(content))
+	w.Resize(fyne.NewSize(450, 250))
+	w.Show()
 }

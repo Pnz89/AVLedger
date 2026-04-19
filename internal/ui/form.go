@@ -102,8 +102,8 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 	scroll := container.NewVScroll(content)
 	scroll.SetMinSize(fyne.NewSize(540, 420))
 
-	// ---- Dialog ----
-	var d dialog.Dialog
+	// ---- Window ----
+	var w fyne.Window
 
 	saveBtn := widget.NewButtonWithIcon("Save", theme.DocumentSaveIcon(), func() {
 		// Validate required fields
@@ -124,7 +124,7 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 			dialog.ShowInformation(
 				"Missing fields",
 				"Please fill in the following required fields:\n• "+strings.Join(missing, "\n• "),
-				parent,
+				w,
 			)
 			return
 		}
@@ -141,19 +141,20 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 			WorkOrderNumber:    strings.TrimSpace(woEntry.Text),
 			VerifiedBy:         strings.TrimSpace(verifiedEntry.Text),
 		}
-		d.Hide()
+		w.Close()
 		onSave(entry)
 	})
 	saveBtn.Importance = widget.HighImportance
 
 	cancelBtn := widget.NewButtonWithIcon("Cancel", theme.CancelIcon(), func() {
-		d.Hide()
+		w.Close()
 	})
 
 	buttons := container.NewHBox(cancelBtn, saveBtn)
 	fullContent := container.NewBorder(nil, buttons, nil, nil, scroll)
 
-	d = dialog.NewCustom(title, "✕", fullContent, parent)
-	d.Resize(fyne.NewSize(580, 520))
-	d.Show()
+	w = fyne.CurrentApp().NewWindow(title)
+	w.SetContent(container.NewPadded(fullContent))
+	w.Resize(fyne.NewSize(580, 520))
+	w.Show()
 }

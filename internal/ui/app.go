@@ -283,11 +283,20 @@ func Run() {
 	titleText.TextSize = 22
 	titleText.TextStyle = fyne.TextStyle{Bold: true}
 
+	versionText := canvas.NewText("0.5.0", theme.DisabledColor())
+	versionText.TextSize = 12
+	versionText.TextStyle = fyne.TextStyle{Bold: true}
+
+	titleRowTop := container.NewHBox(
+		titleText,
+		container.NewCenter(versionText),
+	)
+
 	subtitleText := canvas.NewText("Aircraft Maintenance Logbook", nil)
 	subtitleText.TextSize = 11
 	subtitleText.TextStyle = fyne.TextStyle{Italic: true}
 
-	titleCol := container.NewVBox(titleText, subtitleText)
+	titleCol := container.NewVBox(titleRowTop, subtitleText)
 
 	logoImg := canvas.NewImageFromResource(assets.ResourceLogoPng)
 	logoImg.FillMode = canvas.ImageFillContain
