@@ -20,6 +20,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -28,7 +29,8 @@ import (
 // Run initialises and starts the AVLedger application.
 func Run() {
 	a := app.NewWithID("com.avledger.app")
-	a.Settings().SetTheme(&CustomTheme{})
+	customTheme := &CustomTheme{}
+	a.Settings().SetTheme(customTheme)
 	a.SetIcon(assets.ResourceLogoPng)
 
 	w := a.NewWindow("AVLedger — Maintenance Logbook")
@@ -223,6 +225,26 @@ func Run() {
 		showAssessorsDialog(w, db)
 	})
 
+	// ---- Theme toggle button ----
+	themeBtn := widget.NewButtonWithIcon("", theme.ColorPaletteIcon(), nil)
+	themeBtn.OnTapped = func() {
+		// Determine what variant we are currently displaying
+		current := customTheme.lastVariant
+		if customTheme.ForcedVariant != nil {
+			current = *customTheme.ForcedVariant
+		}
+
+		// Toggle it
+		if current == theme.VariantDark {
+			light := theme.VariantLight
+			customTheme.ForcedVariant = &light
+		} else {
+			dark := theme.VariantDark
+			customTheme.ForcedVariant = &dark
+		}
+		a.Settings().SetTheme(customTheme)
+	}
+
 	// ---- DB path bar ----
 	dbIcon := widget.NewIcon(theme.StorageIcon())
 	dbPathLabel := widget.NewLabel(db.Path)
@@ -283,7 +305,7 @@ func Run() {
 	titleText.TextSize = 22
 	titleText.TextStyle = fyne.TextStyle{Bold: true}
 
-	versionText := canvas.NewText("0.5.2", theme.DisabledColor())
+	versionText := canvas.NewText("0.5.3", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 
@@ -312,6 +334,8 @@ func Run() {
 		widget.NewSeparator(),
 		assessorsBtn,
 		settingsBtn,
+		layout.NewSpacer(),
+		themeBtn,
 	)
 
 	filtersRow := container.NewGridWithColumns(4,

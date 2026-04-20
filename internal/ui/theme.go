@@ -10,16 +10,26 @@ import (
 )
 
 // CustomTheme is a custom theme for AVLedger
-type CustomTheme struct{}
+type CustomTheme struct {
+	// ForcedVariant overrides the OS theme variant when non-nil.
+	ForcedVariant *fyne.ThemeVariant
+	// lastVariant stores the variant requested by Fyne (OS default)
+	lastVariant fyne.ThemeVariant
+}
 
 var _ fyne.Theme = (*CustomTheme)(nil)
 
 func (m *CustomTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
+	m.lastVariant = variant
+	v := variant
+	if m.ForcedVariant != nil {
+		v = *m.ForcedVariant
+	}
 	// Aviation blue primary color
 	if name == theme.ColorNamePrimary {
 		return color.NRGBA{R: 52, G: 152, B: 219, A: 255}
 	}
-	return theme.DefaultTheme().Color(name, variant)
+	return theme.DefaultTheme().Color(name, v)
 }
 
 // Font returns the bundled custom font (Roboto)
