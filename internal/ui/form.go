@@ -30,9 +30,9 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 
 	// ---- Fields ----
 	dateEntry := widget.NewEntry()
-	dateEntry.SetPlaceHolder("DD MMM YYYY")
+	dateEntry.SetPlaceHolder("DD/MM/YYYY")
 	if isNew && existing.Date == "" {
-		dateEntry.SetText(strings.ToUpper(time.Now().Format("02 Jan 2006")))
+		dateEntry.SetText(time.Now().Format("02/01/2006"))
 	} else {
 		dateEntry.SetText(existing.Date)
 	}
