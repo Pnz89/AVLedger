@@ -29,13 +29,14 @@ AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 
 | Feature | Description |
 |---|---|
-| 🔧 Task logging | Record maintenance work efficiently including ATA, Job Type, Workorders etc. |
+| 🔧 Task logging | Record maintenance work efficiently including precise Task Duration (decimal hours), ATA, Job Type, Workorders etc. |
+| ✈️ Aircraft Management | Build and manage a list of aircraft (Type, Registration). Select aircraft directly from dropdowns when logging tasks to ensure data consistency. |
 | 📋 Assessor Management | Store and manage Assessor details (Name, License, Company Approval). Quickly select them on tasks, and automatically expand their full details on PDF export. |
 | 🔍 Advanced filtering | Instantly narrow down your maintenance history by Aircraft, Registration, Category, or Job Type. |
-| ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (with smart text wrapping). |
+| ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (optimized for black-and-white printing, with smart text wrapping). |
 | ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, OneDrive, Dropbox). Features **Auto-Discovery** to "magically" reconnect to an existing cloud database on fresh installations without user intervention. |
 | 💽 Hot-swappable DB | Full manual control. Connect to or switch between any local/remote SQLite database files instantly from the UI without restarting. |
-| 🎨 Refined UI | A modern, minimal Fyne-based interface featuring custom themes, zebra-striped tables, and clear visual hierarchy. |
+| 🎨 Refined UI | A modern, minimal Fyne-based interface featuring custom themes, freely resizable auxiliary windows, zebra-striped tables, and clear visual hierarchy. |
 | 🪶 Lightweight | Minimal footprint, standalone binaries, no heavy unnecessary dependencies. |
 | 🔓 FOSS | Free and open-source, forever. |
 
