@@ -372,18 +372,25 @@ func Run() {
 			for i, p := range validPaths {
 				options[i] = filepath.Base(p)
 			}
+			options = append(options, "Local Storage")
 
 			selectWidget := widget.NewSelect(options, nil)
 			selectWidget.SetSelected(options[0])
 
 			content := container.NewVBox(
-				widget.NewLabel("We detected cloud sync folders on your PC.\nWould you like to move the AVLedger database there to automatically back it up?"),
+				widget.NewLabel("Where would you like to save your AVLedger database?\nWe detected cloud sync folders that allow automatic backups."),
 				selectWidget,
 			)
 
-			dialog.ShowCustomConfirm("Cloud Backup Detected", "Move", "No, thanks", content, func(yes bool) {
-				a.Preferences().SetBool("cloudPrompted", true)
+			dialog.ShowCustomConfirm("Select Database Location", "Confirm", "Cancel", content, func(yes bool) {
 				if yes {
+					a.Preferences().SetBool("cloudPrompted", true)
+					
+					if selectWidget.Selected == "Local Storage" {
+						dialog.ShowInformation("Local Storage", "Database will be kept locally.", w)
+						return
+					}
+
 					var targetFolder string
 					for _, p := range validPaths {
 						if filepath.Base(p) == selectWidget.Selected {
@@ -401,6 +408,11 @@ func Run() {
 						dbPathLabel.SetText(db.Path)
 						dialog.ShowInformation("Success", "Database moved securely and backup initialized.", w)
 					}
+				} else {
+					// If they cancel, we can optionally also mark it as prompted,
+					// or leave it so it prompts next time. 
+					// We'll mark it prompted so it defaults to local storage and doesn't annoy them.
+					a.Preferences().SetBool("cloudPrompted", true)
 				}
 			}, w)
 		}
