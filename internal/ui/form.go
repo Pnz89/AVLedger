@@ -35,7 +35,7 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 	}
 
 	aircraftEntry := widget.NewEntry()
-	aircraftEntry.SetPlaceHolder("e.g. B737 NG (CFM56)")
+	aircraftEntry.SetPlaceHolder("Please select a registration")
 	aircraftEntry.SetText(existing.AircraftEngineType)
 	aircraftEntry.Disable()
 
