@@ -82,21 +82,20 @@ func Run() {
 	searchEntry.SetPlaceHolder("Search tasks...")
 
 	acSelect := widget.NewSelect([]string{"(All)"}, nil)
-	regSelect := widget.NewSelect([]string{"(All)"}, nil)
+	startDateEntry := widget.NewEntry()
+	startDateEntry.SetPlaceHolder("DD/MM/YYYY")
+	endDateEntry := widget.NewEntry()
+	endDateEntry.SetPlaceHolder("DD/MM/YYYY")
 	catSelect := widget.NewSelect([]string{"(All)"}, nil)
 	jobSelect := widget.NewSelect([]string{"(All)"}, nil)
 
 	acSelect.SetSelected("(All)")
-	regSelect.SetSelected("(All)")
 	catSelect.SetSelected("(All)")
 	jobSelect.SetSelected("(All)")
 
 	updateSelectOptions := func() {
 		if opts, _ := db.GetDistinctValues("aircraft_engine_type"); opts != nil {
 			acSelect.Options = append([]string{"(All)"}, opts...)
-		}
-		if opts, _ := db.GetDistinctValues("reg_marks"); opts != nil {
-			regSelect.Options = append([]string{"(All)"}, opts...)
 		}
 		if opts, _ := db.GetDistinctValues("category"); opts != nil {
 			catSelect.Options = append([]string{"(All)"}, opts...)
@@ -112,10 +111,6 @@ func Run() {
 		if ac == "(All)" {
 			ac = ""
 		}
-		reg := regSelect.Selected
-		if reg == "(All)" {
-			reg = ""
-		}
 		cat := catSelect.Selected
 		if cat == "(All)" {
 			cat = ""
@@ -127,7 +122,8 @@ func Run() {
 		return models.FilterOptions{
 			SearchQuery:        searchEntry.Text,
 			AircraftEngineType: ac,
-			RegMarks:           reg,
+			StartDate:          startDateEntry.Text,
+			EndDate:            endDateEntry.Text,
 			Category:           cat,
 			JobType:            job,
 		}
@@ -194,7 +190,8 @@ func Run() {
 
 	searchEntry.OnChanged = func(s string) { refreshAll() }
 	acSelect.OnChanged = func(s string) { refreshAll() }
-	regSelect.OnChanged = func(s string) { refreshAll() }
+	startDateEntry.OnChanged = func(s string) { refreshAll() }
+	endDateEntry.OnChanged = func(s string) { refreshAll() }
 	catSelect.OnChanged = func(s string) { refreshAll() }
 	jobSelect.OnChanged = func(s string) { refreshAll() }
 
@@ -338,11 +335,12 @@ func Run() {
 		themeBtn,
 	)
 
-	filtersRow := container.NewGridWithColumns(4,
+	filtersRow := container.NewGridWithColumns(5,
 		container.NewBorder(nil, nil, widget.NewLabel("Aircraft:"), nil, acSelect),
-		container.NewBorder(nil, nil, widget.NewLabel("Reg:"), nil, regSelect),
 		container.NewBorder(nil, nil, widget.NewLabel("Cat:"), nil, catSelect),
 		container.NewBorder(nil, nil, widget.NewLabel("Job:"), nil, jobSelect),
+		container.NewBorder(nil, nil, widget.NewLabel("From:"), nil, startDateEntry),
+		container.NewBorder(nil, nil, widget.NewLabel("To:"), nil, endDateEntry),
 	)
 
 	searchRow := container.NewBorder(nil, nil, container.NewHBox(widget.NewIcon(theme.SearchIcon()), widget.NewLabel("Search:")), nil, searchEntry)
@@ -450,7 +448,7 @@ func Run() {
 func reloadEntries(db *database.DB, list *[]models.LogEntry, w fyne.Window, opts models.FilterOptions) {
 	var updated []models.LogEntry
 	var err error
-	if opts.SearchQuery == "" && opts.AircraftEngineType == "" && opts.RegMarks == "" && opts.Category == "" && opts.JobType == "" {
+	if opts.SearchQuery == "" && opts.AircraftEngineType == "" && opts.StartDate == "" && opts.EndDate == "" && opts.Category == "" && opts.JobType == "" {
 		updated, err = db.ListEntries()
 	} else {
 		updated, err = db.SearchEntries(opts)

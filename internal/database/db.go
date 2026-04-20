@@ -262,10 +262,6 @@ func (db *DB) SearchEntries(f models.FilterOptions) ([]models.LogEntry, error) {
 		queryBuilder += ` AND aircraft_engine_type = ?`
 		args = append(args, f.AircraftEngineType)
 	}
-	if f.RegMarks != "" {
-		queryBuilder += ` AND reg_marks = ?`
-		args = append(args, f.RegMarks)
-	}
 	if f.Category != "" {
 		queryBuilder += ` AND category = ?`
 		args = append(args, f.Category)
@@ -284,6 +280,15 @@ func (db *DB) SearchEntries(f models.FilterOptions) ([]models.LogEntry, error) {
 	defer rows.Close()
 
 	var entries []models.LogEntry
+	
+	var start, end time.Time
+	if f.StartDate != "" {
+		start = parseDate(f.StartDate)
+	}
+	if f.EndDate != "" {
+		end = parseDate(f.EndDate)
+	}
+
 	for rows.Next() {
 		var e models.LogEntry
 		if err := rows.Scan(
@@ -292,6 +297,16 @@ func (db *DB) SearchEntries(f models.FilterOptions) ([]models.LogEntry, error) {
 		); err != nil {
 			return nil, err
 		}
+
+		// Apply date filter if set
+		t := parseDate(e.Date)
+		if !start.IsZero() && t.Before(start) {
+			continue
+		}
+		if !end.IsZero() && t.After(end) {
+			continue
+		}
+
 		entries = append(entries, e)
 	}
 	if rows.Err() == nil {
@@ -339,7 +354,6 @@ func (db *DB) DeleteEntry(id int64) error {
 func (db *DB) GetDistinctValues(column string) ([]string, error) {
 	validCols := map[string]bool{
 		"aircraft_engine_type": true,
-		"reg_marks":            true,
 		"category":             true,
 		"job_type":             true,
 	}

@@ -26,7 +26,8 @@ type Settings struct {
 type FilterOptions struct {
 	SearchQuery        string
 	AircraftEngineType string
-	RegMarks           string
+	StartDate          string
+	EndDate            string
 	Category           string
 	JobType            string
 }
