@@ -222,6 +222,10 @@ func Run() {
 		showAssessorsDialog(w, db)
 	})
 
+	aircraftsBtn := widget.NewButtonWithIcon("  Aircrafts", theme.FileApplicationIcon(), func() {
+		showAircraftsDialog(w, db)
+	})
+
 	// ---- Theme toggle button ----
 	themeBtn := widget.NewButtonWithIcon("", theme.ColorPaletteIcon(), nil)
 	themeBtn.OnTapped = func() {
@@ -232,12 +236,12 @@ func Run() {
 		}
 
 		// Toggle it
-		if current == theme.VariantDark {
-			light := theme.VariantLight
-			customTheme.ForcedVariant = &light
-		} else {
+		if current == theme.VariantLight {
 			dark := theme.VariantDark
 			customTheme.ForcedVariant = &dark
+		} else {
+			light := theme.VariantLight
+			customTheme.ForcedVariant = &light
 		}
 		a.Settings().SetTheme(customTheme)
 	}
@@ -302,7 +306,7 @@ func Run() {
 	titleText.TextSize = 22
 	titleText.TextStyle = fyne.TextStyle{Bold: true}
 
-	versionText := canvas.NewText("0.5.3", theme.PlaceHolderColor())
+	versionText := canvas.NewText("0.5.3", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 
@@ -329,6 +333,7 @@ func Run() {
 		newBtn,
 		exportBtn,
 		widget.NewSeparator(),
+		aircraftsBtn,
 		assessorsBtn,
 		settingsBtn,
 		layout.NewSpacer(),

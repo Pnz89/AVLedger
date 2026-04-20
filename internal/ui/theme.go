@@ -29,6 +29,12 @@ func (m *CustomTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant)
 	if name == theme.ColorNamePrimary {
 		return color.NRGBA{R: 52, G: 152, B: 219, A: 255}
 	}
+	// Brighter disabled text in dark theme
+	if name == theme.ColorNameDisabled {
+		if v == theme.VariantDark {
+			return color.NRGBA{R: 120, G: 120, B: 120, A: 255}
+		}
+	}
 	return theme.DefaultTheme().Color(name, v)
 }
 

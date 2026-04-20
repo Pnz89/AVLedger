@@ -167,6 +167,13 @@ func (db *DB) migrate() error {
 			license_number   TEXT    NOT NULL DEFAULT '',
 			company_approval TEXT    NOT NULL DEFAULT ''
 		);
+
+		CREATE TABLE IF NOT EXISTS aircrafts (
+			id           INTEGER PRIMARY KEY AUTOINCREMENT,
+			registration TEXT    NOT NULL UNIQUE,
+			aircraft     TEXT    NOT NULL DEFAULT '',
+			engine       TEXT    NOT NULL DEFAULT ''
+		);
 	`)
 	if err != nil {
 		return err

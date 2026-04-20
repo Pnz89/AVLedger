@@ -2,7 +2,6 @@ package ui
 
 import (
 	"strings"
-	"time"
 
 	"avledger/internal/database"
 	"avledger/internal/models"
@@ -31,19 +30,36 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 	// ---- Fields ----
 	dateEntry := widget.NewEntry()
 	dateEntry.SetPlaceHolder("DD/MM/YYYY")
-	if isNew && existing.Date == "" {
-		dateEntry.SetText(time.Now().Format("02/01/2006"))
-	} else {
+	if existing.Date != "" {
 		dateEntry.SetText(existing.Date)
 	}
 
 	aircraftEntry := widget.NewEntry()
 	aircraftEntry.SetPlaceHolder("e.g. B737 NG (CFM56)")
 	aircraftEntry.SetText(existing.AircraftEngineType)
+	aircraftEntry.Disable()
 
-	regEntry := widget.NewEntry()
-	regEntry.SetPlaceHolder("e.g. I-DEMF")
-	regEntry.SetText(existing.RegMarks)
+	aircrafts, _ := db.ListAircrafts()
+	var aircraftRegs []string
+	aircraftMap := make(map[string]models.Aircraft)
+	for _, a := range aircrafts {
+		aircraftRegs = append(aircraftRegs, a.Registration)
+		aircraftMap[a.Registration] = a
+	}
+
+	regEntry := widget.NewSelect(aircraftRegs, func(s string) {
+		if a, ok := aircraftMap[s]; ok {
+			combined := a.Aircraft
+			if a.Engine != "" {
+				combined += " (" + a.Engine + ")"
+			}
+			aircraftEntry.SetText(combined)
+		}
+	})
+	regEntry.PlaceHolder = "Select Registration..."
+	if existing.RegMarks != "" {
+		regEntry.SetSelected(existing.RegMarks)
+	}
 
 	taskEntry := widget.NewMultiLineEntry()
 	taskEntry.SetPlaceHolder("Description of work performed…")
@@ -79,15 +95,17 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 		assessorNames = append(assessorNames, a.Name)
 	}
 
-	verifiedEntry := widget.NewSelectEntry(assessorNames)
-	verifiedEntry.SetPlaceHolder("Select or type Assessor name")
-	verifiedEntry.SetText(existing.VerifiedBy)
+	verifiedEntry := widget.NewSelect(assessorNames, nil)
+	verifiedEntry.PlaceHolder = "Select Assessor"
+	if existing.VerifiedBy != "" {
+		verifiedEntry.SetSelected(existing.VerifiedBy)
+	}
 
 	// ---- Layout ----
 	form := widget.NewForm(
 		widget.NewFormItem("Date *", dateEntry),
-		widget.NewFormItem("Aircraft / Engine *", aircraftEntry),
 		widget.NewFormItem("Registration *", regEntry),
+		widget.NewFormItem("Aircraft / Engine *", aircraftEntry),
 		widget.NewFormItem("Task Detail *", taskEntry),
 		widget.NewFormItem("Category", categorySelect),
 		widget.NewFormItem("Job type", jobTypeEntry),
@@ -119,7 +137,7 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 		if strings.TrimSpace(aircraftEntry.Text) == "" {
 			missing = append(missing, "Aircraft / Engine")
 		}
-		if strings.TrimSpace(regEntry.Text) == "" {
+		if regEntry.Selected == "" {
 			missing = append(missing, "Registration")
 		}
 		if strings.TrimSpace(taskEntry.Text) == "" {
@@ -138,14 +156,14 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 			ID:                 existing.ID,
 			Date:               strings.TrimSpace(dateEntry.Text),
 			AircraftEngineType: strings.TrimSpace(aircraftEntry.Text),
-			RegMarks:           strings.TrimSpace(regEntry.Text),
+			RegMarks:           regEntry.Selected,
 			TaskDetail:         strings.TrimSpace(taskEntry.Text),
 			Category:           categorySelect.Selected,
 			JobType:            strings.TrimSpace(jobTypeEntry.Text),
 			ATA:                strings.TrimSpace(ataEntry.Text),
 			WorkOrderNumber:    strings.TrimSpace(woEntry.Text),
 			Duration:           strings.TrimSpace(durationEntry.Text),
-			VerifiedBy:         strings.TrimSpace(verifiedEntry.Text),
+			VerifiedBy:         verifiedEntry.Selected,
 		}
 		w.Close()
 		onSave(entry)
