@@ -320,7 +320,7 @@ func Run() {
 	)
 
 	// ---- Header / title ----
-	versionText := canvas.NewText("0.6.0", theme.DisabledColor())
+	versionText := canvas.NewText("0.6.1", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 

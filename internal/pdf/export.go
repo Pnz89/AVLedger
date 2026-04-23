@@ -33,7 +33,7 @@ func Export(path string, entries []models.LogEntry, s models.Settings, db *datab
 	})
 
 	opt := fpdf.ImageOptions{ImageType: "png", ReadDpi: true}
-	pdf.RegisterImageOptionsReader("logo", opt, bytes.NewReader(assets.ResourceLogoPng.StaticContent))
+	pdf.RegisterImageOptionsReader("logo", opt, bytes.NewReader(assets.ResourceMarkPng.StaticContent))
 
 	pdf.SetMargins(margin, margin, margin)
 	pdf.SetAutoPageBreak(false, 0)

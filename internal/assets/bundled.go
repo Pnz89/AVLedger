@@ -35,3 +35,10 @@ var ResourceWordmarkLightPng = &fyne.StaticResource{
 	StaticName:    "AVLedger-wordmark-light-720.png",
 	StaticContent: ResourceWordmarkLightPngData,
 }
+
+//go:embed AVLedger-mark-512.png
+var ResourceMarkPngData []byte
+var ResourceMarkPng = &fyne.StaticResource{
+	StaticName:    "AVLedger-mark-512.png",
+	StaticContent: ResourceMarkPngData,
+}
