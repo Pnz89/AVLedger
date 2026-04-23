@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="logo.png" alt="AVLedger Logo" width="180"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="internal/assets/AVLedger-wordmark-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="internal/assets/AVLedger-wordmark-light.svg">
+    <img alt="AVLedger Logo" src="internal/assets/AVLedger-wordmark-light.svg" width="400">
+  </picture>
 </p>
 
 # ✈️ AVLedger
