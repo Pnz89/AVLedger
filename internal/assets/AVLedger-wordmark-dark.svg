@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 96" role="img" aria-label="AVLedger">
+  
+  <text x="0" y="70" font-size="80" font-weight="700" fill="#e8eef6">AV</text>
+  <text x="104" y="70" font-size="80" font-weight="500" fill="#e8eef6" opacity="0.6">Ledger</text>
+  <rect x="412" y="58" width="72" height="5" fill="#e8eef6"></rect>
+</svg>

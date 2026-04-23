@@ -226,7 +226,16 @@ func Run() {
 		showAircraftsDialog(w, db)
 	})
 
-	// ---- Theme toggle button ----
+	// ---- Theme toggle button and Logo ----
+	var logoImg *canvas.Image
+	if a.Settings().ThemeVariant() == theme.VariantDark {
+		logoImg = canvas.NewImageFromResource(assets.ResourceWordmarkDarkPng)
+	} else {
+		logoImg = canvas.NewImageFromResource(assets.ResourceWordmarkLightPng)
+	}
+	logoImg.FillMode = canvas.ImageFillContain
+	logoImg.SetMinSize(fyne.NewSize(120, 32))
+
 	themeBtn := widget.NewButtonWithIcon("", theme.ColorPaletteIcon(), nil)
 	themeBtn.OnTapped = func() {
 		// Determine what variant we are currently displaying
@@ -244,6 +253,15 @@ func Run() {
 			customTheme.ForcedVariant = &light
 		}
 		a.Settings().SetTheme(customTheme)
+		
+		// Update logo immediately on toggle
+		variant := *customTheme.ForcedVariant
+		if variant == theme.VariantDark {
+			logoImg.Resource = assets.ResourceWordmarkDarkPng
+		} else {
+			logoImg.Resource = assets.ResourceWordmarkLightPng
+		}
+		logoImg.Refresh()
 	}
 
 	// ---- DB path bar ----
@@ -302,16 +320,12 @@ func Run() {
 	)
 
 	// ---- Header / title ----
-	titleText := canvas.NewText("AVLedger", theme.PrimaryColor())
-	titleText.TextSize = 22
-	titleText.TextStyle = fyne.TextStyle{Bold: true}
-
 	versionText := canvas.NewText("0.6.0", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 
 	titleRowTop := container.NewHBox(
-		titleText,
+		logoImg,
 		container.NewCenter(versionText),
 	)
 
@@ -321,11 +335,7 @@ func Run() {
 
 	titleCol := container.NewVBox(titleRowTop, subtitleText)
 
-	logoImg := canvas.NewImageFromResource(assets.ResourceLogoPng)
-	logoImg.FillMode = canvas.ImageFillContain
-	logoImg.SetMinSize(fyne.NewSize(40, 40))
-
-	titleRow := container.NewHBox(logoImg, titleCol)
+	titleRow := container.NewHBox(titleCol)
 
 	toolbar := container.NewHBox(
 		titleRow,
