@@ -11,10 +11,85 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	xwidget "fyne.io/x/fyne/widget"
 )
 
 // categories available for selection
 var categories = []string{"A1", "A2", "A3", "A4", "B1.1", "B1.2", "B1.3", "B1.4", "B2", "B3", "C", "Mech"}
+
+// ataChapters represents standard ATA 100 chapters
+var ataChapters = []string{
+	"05 - TIME LIMITS/MAINTENANCE CHECKS",
+	"06 - DIMENSIONS AND AREAS",
+	"07 - LIFTING AND SHORING",
+	"08 - LEVELING AND WEIGHING",
+	"09 - TOWING AND TAXIING",
+	"10 - PARKING, MOORING, STORAGE AND RETURN TO SERVICE",
+	"11 - PLACARDS AND MARKINGS",
+	"12 - SERVICING - ROUTINE MAINTENANCE",
+	"18 - VIBRATION AND NOISE ANALYSIS (HELICOPTER ONLY)",
+	"20 - STANDARD PRACTICES - AIRFRAME",
+	"21 - AIR CONDITIONING",
+	"22 - AUTO FLIGHT",
+	"23 - COMMUNICATIONS",
+	"24 - ELECTRICAL POWER",
+	"25 - EQUIPMENT/FURNISHINGS",
+	"26 - FIRE PROTECTION",
+	"27 - FLIGHT CONTROLS",
+	"28 - FUEL",
+	"29 - HYDRAULIC POWER",
+	"30 - ICE AND RAIN PROTECTION",
+	"31 - INDICATING/RECORDING SYSTEMS",
+	"32 - LANDING GEAR",
+	"33 - LIGHTS",
+	"34 - NAVIGATION",
+	"35 - OXYGEN",
+	"36 - PNEUMATIC",
+	"37 - VACUUM",
+	"38 - WATER/WASTE",
+	"39 - ELECTRICAL - ELECTRONIC PANELS AND MULTIPURPOSE COMPONENTS",
+	"41 - WATER BALLAST",
+	"42 - INTEGRATED MODULAR AVIONICS",
+	"44 - CABIN SYSTEMS",
+	"45 - DIAGNOSTIC AND MAINTENANCE SYSTEM",
+	"46 - INFORMATION SYSTEMS",
+	"47 - NITROGEN GENERATION SYSTEM",
+	"49 - AIRBORNE AUXILIARY POWER",
+	"51 - STANDARD PRACTICES AND STRUCTURES - GENERAL",
+	"52 - DOORS",
+	"53 - FUSELAGE",
+	"54 - NACELLES/PYLONS",
+	"55 - STABILIZERS",
+	"56 - WINDOWS",
+	"57 - WINGS",
+	"60 - STANDARD PRACTICES - PROPELLER/ROTOR",
+	"61 - PROPELLERS/PROPULSORS",
+	"62 - MAIN ROTOR(S)",
+	"63 - MAIN ROTOR DRIVE(S)",
+	"64 - TAIL ROTOR",
+	"65 - TAIL ROTOR DRIVE",
+	"66 - ROTOR BLADE AND TAIL PYLON FOLDING",
+	"67 - ROTORS FLIGHT CONTROL",
+	"70 - STANDARD PRACTICES - ENGINE",
+	"71 - POWER PLANT - GENERAL",
+	"72 - ENGINE",
+	"73 - ENGINE - FUEL AND CONTROL",
+	"74 - IGNITION",
+	"75 - BLEED AIR",
+	"76 - ENGINE CONTROLS",
+	"77 - ENGINE INDICATING",
+	"78 - EXHAUST",
+	"79 - OIL",
+	"80 - STARTING",
+	"81 - TURBINES (RECIPROCATING ENGINES)",
+	"82 - WATER INJECTION",
+	"83 - ACCESSORY GEAR BOXES",
+	"84 - PROPULSION AUGMENTATION",
+	"85 - FUEL CELL SYSTEMS",
+	"91 - CHARTS",
+	"92 - ELECTRICAL SYSTEM INSTALLATION",
+	"95 - CREW INFORMATION",
+}
 
 // showEntryForm opens a modal dialog to create or edit a LogEntry.
 // onSave is called with the filled entry when the user confirms.
@@ -77,9 +152,29 @@ func showEntryForm(parent fyne.Window, db *database.DB, existing models.LogEntry
 	jobTypeEntry.SetPlaceHolder("e.g. Line, Base, Mod")
 	jobTypeEntry.SetText(existing.JobType)
 
-	ataEntry := widget.NewEntry()
-	ataEntry.SetPlaceHolder("e.g. 32")
+	ataEntry := xwidget.NewCompletionEntry(ataChapters)
+	ataEntry.SetPlaceHolder("e.g. 32 - LANDING GEAR")
 	ataEntry.SetText(existing.ATA)
+	ataEntry.OnChanged = func(s string) {
+		if s == "" {
+			ataEntry.SetOptions(ataChapters)
+			ataEntry.HideCompletion()
+			return
+		}
+		s = strings.ToUpper(s)
+		var filtered []string
+		for _, opt := range ataChapters {
+			if strings.Contains(strings.ToUpper(opt), s) {
+				filtered = append(filtered, opt)
+			}
+		}
+		ataEntry.SetOptions(filtered)
+		if len(filtered) > 0 {
+			ataEntry.ShowCompletion()
+		} else {
+			ataEntry.HideCompletion()
+		}
+	}
 
 	woEntry := widget.NewEntry()
 	woEntry.SetPlaceHolder("Work Order Number")

@@ -188,6 +188,11 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 			}
 		}
 
+		ataDisplay := e.ATA
+		if idx := strings.Index(ataDisplay, " - "); idx != -1 {
+			ataDisplay = strings.TrimSpace(ataDisplay[:idx])
+		}
+
 		cells := []string{
 			e.Date,
 			e.AircraftEngineType,
@@ -195,7 +200,7 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 			e.TaskDetail,
 			e.Category,
 			e.JobType,
-			e.ATA,
+			ataDisplay,
 			e.WorkOrderNumber,
 			e.Duration,
 			verifiedBy,

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"image/color"
+	"strings"
 
 	"avledger/internal/models"
 
@@ -159,7 +160,11 @@ func buildTable(
 			labels[2].SetText(e.RegMarks)
 			labels[3].SetText(e.Category)
 			labels[4].SetText(e.JobType)
-			labels[5].SetText(e.ATA)
+			ataDisplay := e.ATA
+			if idx := strings.Index(ataDisplay, " - "); idx != -1 {
+				ataDisplay = strings.TrimSpace(ataDisplay[:idx])
+			}
+			labels[5].SetText(ataDisplay)
 			labels[6].SetText(e.WorkOrderNumber)
 			labels[7].SetText(e.Duration)
 			labels[8].SetText(e.TaskDetail)
