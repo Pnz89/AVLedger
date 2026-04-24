@@ -33,7 +33,7 @@ func Run() {
 	a.Settings().SetTheme(customTheme)
 	a.SetIcon(assets.ResourceLogoPng)
 
-	w := a.NewWindow("AVLedger — Maintenance Logbook")
+	w := a.NewWindow("AVLedger - The logbook that belongs to you")
 	w.SetIcon(assets.ResourceLogoPng)
 	w.Resize(fyne.NewSize(1280, 760))
 	w.SetMaster()
@@ -324,12 +324,12 @@ func Run() {
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 
-	titleRowTop := container.NewHBox(
+	titleCol := container.NewVBox(
 		logoImg,
-		container.NewCenter(versionText),
+		versionText,
 	)
 
-	titleRow := container.NewHBox(titleRowTop)
+	titleRow := container.NewHBox(titleCol)
 
 	toolbar := container.NewHBox(
 		titleRow,
