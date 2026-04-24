@@ -41,7 +41,7 @@ func Export(path string, entries []models.LogEntry, s models.Settings, db *datab
 	pdf.SetAuthor(s.HolderName, false)
 
 	// Split entries into pages of rowsPerPage rows each
-	const rowsPerPage = 12
+	const rowsPerPage = 10
 	pages := chunkEntries(entries, rowsPerPage)
 	if len(pages) == 0 {
 		pages = [][]models.LogEntry{{}} // at least one blank page
@@ -60,8 +60,8 @@ func drawPage(pdf *fpdf.Fpdf, entries []models.LogEntry, s models.Settings, page
 	// ---- Table geometry ----
 	const (
 		headerH    = 12.0 // total header height (two sub-rows of 6mm each)
-		rowH       = 11.0 // data row height
-		rowsOnPage = 12
+		rowH       = 13.2 // data row height
+		rowsOnPage = 10
 	)
 
 	tableTop := margin + 22.0
