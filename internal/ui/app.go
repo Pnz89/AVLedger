@@ -329,13 +329,7 @@ func Run() {
 		container.NewCenter(versionText),
 	)
 
-	subtitleText := canvas.NewText("Aircraft Maintenance Logbook", nil)
-	subtitleText.TextSize = 11
-	subtitleText.TextStyle = fyne.TextStyle{Italic: true}
-
-	titleCol := container.NewVBox(titleRowTop, subtitleText)
-
-	titleRow := container.NewHBox(titleCol)
+	titleRow := container.NewHBox(titleRowTop)
 
 	toolbar := container.NewHBox(
 		titleRow,

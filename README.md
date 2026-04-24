@@ -117,4 +117,4 @@ You are free to use, study, modify, and distribute this software, provided that 
 
 ---
 
-> *Built for the people who keep planes in the air — not for the people who like pretty dashboards.*
+> *The logbook that belongs to you*
