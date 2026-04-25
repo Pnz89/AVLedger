@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -38,36 +39,173 @@ func Run() {
 	w.Resize(fyne.NewSize(1280, 760))
 	w.SetMaster()
 
-	// ---- Open DB ----
-	customDBPath := a.Preferences().StringWithFallback("dbPath", "")
-	isFirstRun := customDBPath == ""
-	var autoDiscoveredCloudDB string
+	showProfileSelector(a, w, customTheme)
 
-	if isFirstRun {
-		cloudFolders := detectCloudSyncFolders()
-		for _, f := range cloudFolders {
-			checkPath := filepath.Join(f, "AVLedger", "avledger.db")
-			if _, err := os.Stat(checkPath); err == nil {
-				autoDiscoveredCloudDB = checkPath
-				break
+	w.ShowAndRun()
+}
+
+func getLogoImage(a fyne.App) *canvas.Image {
+	var logoImg *canvas.Image
+	if a.Settings().ThemeVariant() == theme.VariantDark {
+		logoImg = canvas.NewImageFromResource(assets.ResourceWordmarkDarkPng)
+	} else {
+		logoImg = canvas.NewImageFromResource(assets.ResourceWordmarkLightPng)
+	}
+	logoImg.FillMode = canvas.ImageFillContain
+	return logoImg
+}
+
+func showProfileSelector(a fyne.App, w fyne.Window, customTheme *CustomTheme) {
+	var profiles []models.UserProfile
+	prefStr := a.Preferences().String("profiles")
+	if prefStr != "" {
+		_ = json.Unmarshal([]byte(prefStr), &profiles)
+	} else {
+		// Migration for existing single-user setups
+		legacyPath := a.Preferences().String("dbPath")
+		if legacyPath == "" {
+			// First run migration check
+			cloudFolders := detectCloudSyncFolders()
+			for _, f := range cloudFolders {
+				checkPath := filepath.Join(f, "AVLedger", "avledger.db")
+				if _, err := os.Stat(checkPath); err == nil {
+					legacyPath = checkPath
+					break
+				}
+			}
+		}
+		if legacyPath != "" {
+			profiles = append(profiles, models.UserProfile{Name: "Default", DBPath: legacyPath})
+			b, _ := json.Marshal(profiles)
+			a.Preferences().SetString("profiles", string(b))
+		}
+	}
+
+	logoImg := getLogoImage(a)
+	logoImg.SetMinSize(fyne.NewSize(200, 80))
+
+	title := widget.NewLabel("Select Your Profile")
+	title.TextStyle = fyne.TextStyle{Bold: true}
+	title.Alignment = fyne.TextAlignCenter
+
+	var list *widget.List
+	list = widget.NewList(
+		func() int { return len(profiles) },
+		func() fyne.CanvasObject {
+			btn := widget.NewButton("Select", nil)
+			btn.Importance = widget.HighImportance
+			return container.NewBorder(nil, nil, widget.NewIcon(theme.AccountIcon()), btn, widget.NewLabel("Name"))
+		},
+		func(i widget.ListItemID, o fyne.CanvasObject) {
+			row := o.(*fyne.Container)
+			nameLabel := row.Objects[0].(*widget.Label)
+			nameLabel.SetText(profiles[i].Name)
+			nameLabel.TextStyle = fyne.TextStyle{Bold: true}
+			
+			btn := row.Objects[2].(*widget.Button)
+			btn.OnTapped = func() {
+				showMainApp(a, w, customTheme, profiles[i], profiles)
+			}
+		},
+	)
+
+	newBtn := widget.NewButtonWithIcon("Create New Profile", theme.ContentAddIcon(), func() {
+		showNewProfileDialog(a, w, &profiles, func(newProfile models.UserProfile) {
+			b, _ := json.Marshal(profiles)
+			a.Preferences().SetString("profiles", string(b))
+			list.Refresh()
+			showMainApp(a, w, customTheme, newProfile, profiles)
+		})
+	})
+	newBtn.Importance = widget.HighImportance
+
+	cardContent := container.NewBorder(
+		container.NewVBox(container.NewCenter(logoImg), widget.NewSeparator(), title, widget.NewLabel("")),
+		container.NewPadded(newBtn),
+		nil, nil,
+		container.NewPadded(list),
+	)
+
+	card := widget.NewCard("", "", cardContent)
+	centered := container.NewCenter(container.New(layout.NewGridWrapLayout(fyne.NewSize(450, 500)), card))
+
+	w.SetContent(centered)
+}
+
+func showNewProfileDialog(a fyne.App, w fyne.Window, profiles *[]models.UserProfile, onCreated func(models.UserProfile)) {
+	nameEntry := widget.NewEntry()
+	nameEntry.SetPlaceHolder("E.g. Mario Rossi")
+
+	cloudFolders := detectCloudSyncFolders()
+	options := []string{"Local Storage (Default)"}
+	for _, p := range cloudFolders {
+		options = append(options, filepath.Base(p))
+	}
+
+	storageSelect := widget.NewSelect(options, nil)
+	storageSelect.SetSelected(options[0])
+
+	items := []*widget.FormItem{
+		widget.NewFormItem("Profile Name", nameEntry),
+		widget.NewFormItem("Save Location", storageSelect),
+	}
+
+	dialog.ShowForm("Create New Profile", "Create", "Cancel", items, func(confirm bool) {
+		if !confirm {
+			return
+		}
+		name := strings.TrimSpace(nameEntry.Text)
+		if name == "" {
+			dialog.ShowError(fmt.Errorf("Profile name cannot be empty"), w)
+			return
+		}
+
+		for _, p := range *profiles {
+			if strings.EqualFold(p.Name, name) {
+				dialog.ShowError(fmt.Errorf("Profile name already exists"), w)
+				return
 			}
 		}
 
-		if autoDiscoveredCloudDB != "" {
-			a.Preferences().SetString("dbPath", autoDiscoveredCloudDB)
-			customDBPath = autoDiscoveredCloudDB
+		var dir string
+		if storageSelect.Selected == "Local Storage (Default)" {
+			dataDir, err := os.UserConfigDir()
+			if err != nil {
+				dataDir, _ = os.UserHomeDir()
+			}
+			dir = filepath.Join(dataDir, "avledger", "profiles", name)
+		} else {
+			for _, p := range cloudFolders {
+				if filepath.Base(p) == storageSelect.Selected {
+					dir = filepath.Join(p, "AVLedger", name)
+					break
+				}
+			}
 		}
-	}
 
-	db, err := database.Open(customDBPath)
+		os.MkdirAll(dir, 0755)
+		dbPath := filepath.Join(dir, "avledger.db")
+
+		newProfile := models.UserProfile{Name: name, DBPath: dbPath}
+		*profiles = append(*profiles, newProfile)
+		onCreated(newProfile)
+
+	}, w)
+}
+
+func saveProfiles(a fyne.App, profiles []models.UserProfile) {
+	b, _ := json.Marshal(profiles)
+	a.Preferences().SetString("profiles", string(b))
+}
+
+func showMainApp(a fyne.App, w fyne.Window, customTheme *CustomTheme, profile models.UserProfile, allProfiles []models.UserProfile) {
+	db, err := database.Open(profile.DBPath)
 	if err != nil {
 		dialog.ShowError(err, w)
-		a.Quit()
+		showProfileSelector(a, w, customTheme)
 		return
 	}
-	defer db.Close()
 
-	// ---- Load initial data ----
 	entries, err := db.ListEntries()
 	if err != nil {
 		entries = []models.LogEntry{}
@@ -75,7 +213,6 @@ func Run() {
 
 	settings := loadSettings(db)
 
-	// ---- Mutable entry list shared with table ----
 	entryList := entries
 
 	searchEntry := widget.NewEntry()
@@ -151,13 +288,10 @@ func Run() {
 		}
 	}
 
-	// ---- Build table ----
-	// et declared before callbacks so closures can reference it
 	var et *entryTable
 	var tableContent fyne.CanvasObject
 
 	et, tableContent = buildTable(&entryList, w,
-		// onEdit
 		func(e models.LogEntry) {
 			showEntryForm(w, db, e, func(updated models.LogEntry) {
 				if err := db.UpdateEntry(updated); err != nil {
@@ -169,7 +303,6 @@ func Run() {
 				et.Refresh()
 			})
 		},
-		// onDelete
 		func(id int64) {
 			if err := db.DeleteEntry(id); err != nil {
 				dialog.ShowError(err, w)
@@ -181,7 +314,6 @@ func Run() {
 		},
 	)
 
-	// ---- Count label & Time (status bar) ----
 	countText := widget.NewLabel("")
 
 	clockStr := binding.NewString()
@@ -218,7 +350,6 @@ func Run() {
 	ataSelect.OnChanged = func(s string) { refreshAll() }
 	jobSelect.OnChanged = func(s string) { refreshAll() }
 
-	// ---- Toolbar buttons ----
 	newBtn := widget.NewButtonWithIcon("  Task", theme.ContentAddIcon(), func() {
 		showEntryForm(w, db, models.LogEntry{}, func(e models.LogEntry) {
 			if _, err := db.CreateEntry(e); err != nil {
@@ -249,25 +380,16 @@ func Run() {
 		showAircraftsDialog(w, db)
 	})
 
-	// ---- Theme toggle button and Logo ----
-	var logoImg *canvas.Image
-	if a.Settings().ThemeVariant() == theme.VariantDark {
-		logoImg = canvas.NewImageFromResource(assets.ResourceWordmarkDarkPng)
-	} else {
-		logoImg = canvas.NewImageFromResource(assets.ResourceWordmarkLightPng)
-	}
-	logoImg.FillMode = canvas.ImageFillContain
+	logoImg := getLogoImage(a)
 	logoImg.SetMinSize(fyne.NewSize(120, 32))
 
 	themeBtn := widget.NewButtonWithIcon("", theme.ColorPaletteIcon(), nil)
 	themeBtn.OnTapped = func() {
-		// Determine what variant we are currently displaying
 		current := customTheme.lastVariant
 		if customTheme.ForcedVariant != nil {
 			current = *customTheme.ForcedVariant
 		}
 
-		// Toggle it
 		if current == theme.VariantLight {
 			dark := theme.VariantDark
 			customTheme.ForcedVariant = &dark
@@ -277,7 +399,6 @@ func Run() {
 		}
 		a.Settings().SetTheme(customTheme)
 		
-		// Update logo immediately on toggle
 		variant := *customTheme.ForcedVariant
 		if variant == theme.VariantDark {
 			logoImg.Resource = assets.ResourceWordmarkDarkPng
@@ -287,7 +408,6 @@ func Run() {
 		logoImg.Refresh()
 	}
 
-	// ---- DB path bar ----
 	dbIcon := widget.NewIcon(theme.StorageIcon())
 	dbPathLabel := widget.NewLabel(db.Path)
 	dbPathLabel.TextStyle = fyne.TextStyle{Monospace: true}
@@ -305,10 +425,16 @@ func Run() {
 				dialog.ShowError(err, w)
 				return
 			}
+			
+			for i, p := range allProfiles {
+				if p.Name == profile.Name {
+					allProfiles[i].DBPath = db.Path
+					saveProfiles(a, allProfiles)
+					break
+				}
+			}
 
-			a.Preferences().SetString("dbPath", db.Path)
 			dbPathLabel.SetText(db.Path)
-
 			updateSelectOptions()
 			refreshAll()
 
@@ -327,22 +453,27 @@ func Run() {
 
 	manageMenu := fyne.NewMenu("Manage DB", changeDBItem, openFolderItem)
 
-	var manageDBBtn *widget.Button
-	manageDBBtn = widget.NewButtonWithIcon("Manage DB", theme.SettingsIcon(), func() {
+	manageDBBtn := widget.NewButtonWithIcon("Manage DB", theme.SettingsIcon(), nil)
+	manageDBBtn.OnTapped = func() {
 		pos := fyne.CurrentApp().Driver().AbsolutePositionForObject(manageDBBtn)
 		pos.Y += manageDBBtn.Size().Height
 		widget.ShowPopUpMenuAtPosition(manageMenu, w.Canvas(), pos)
-	})
+	}
 
-	rightActions := container.NewHBox(manageDBBtn)
+	switchProfileBtn := widget.NewButtonWithIcon("Switch Profile", theme.AccountIcon(), func() {
+		db.Close()
+		showProfileSelector(a, w, customTheme)
+	})
+	switchProfileBtn.Importance = widget.WarningImportance
+
+	rightActions := container.NewHBox(switchProfileBtn, manageDBBtn)
 
 	dbBar := container.NewBorder(nil, nil,
-		container.NewHBox(dbIcon, widget.NewLabel("Database:")),
+		container.NewHBox(dbIcon, widget.NewLabel(fmt.Sprintf("Profile: %s | DB:", profile.Name))),
 		rightActions,
 		dbPathLabel,
 	)
 
-	// ---- Header / title ----
 	versionText := canvas.NewText("0.6.2", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
@@ -383,7 +514,6 @@ func Run() {
 		filtersRow,
 	)
 
-	// ---- Assemble layout ----
 	toolsCard := widget.NewCard("", "", container.NewVBox(
 		container.NewPadded(toolbar),
 		widget.NewSeparator(),
@@ -405,83 +535,12 @@ func Run() {
 	)
 
 	w.SetContent(content)
-
-	// ---- Notification if auto-discovered ----
-	if isFirstRun && autoDiscoveredCloudDB != "" {
-		dialog.ShowInformation("Cloud Logbook Found",
-			fmt.Sprintf("Welcome!\nWe automatically found and connected to your existing logbook in the cloud folder:\n\n%s", filepath.Dir(autoDiscoveredCloudDB)), w)
-	}
-
-	// ---- Cloud Backup Prompter ----
-	if isFirstRun && autoDiscoveredCloudDB == "" && !a.Preferences().Bool("cloudPrompted") {
-		cloudFolders := detectCloudSyncFolders()
-		var validPaths []string
-		for _, p := range cloudFolders {
-			if !strings.HasPrefix(db.Path, p) {
-				validPaths = append(validPaths, p)
-			}
-		}
-
-		if len(validPaths) > 0 {
-			options := make([]string, len(validPaths))
-			for i, p := range validPaths {
-				options[i] = filepath.Base(p)
-			}
-			options = append(options, "Local Storage")
-
-			selectWidget := widget.NewSelect(options, nil)
-			selectWidget.SetSelected(options[0])
-
-			content := container.NewVBox(
-				widget.NewLabel("Where would you like to save your AVLedger database?\nWe detected cloud sync folders that allow automatic backups."),
-				selectWidget,
-			)
-
-			dialog.ShowCustomConfirm("Select Database Location", "Confirm", "Cancel", content, func(yes bool) {
-				if yes {
-					a.Preferences().SetBool("cloudPrompted", true)
-					
-					if selectWidget.Selected == "Local Storage" {
-						dialog.ShowInformation("Local Storage", "Database will be kept locally.", w)
-						return
-					}
-
-					var targetFolder string
-					for _, p := range validPaths {
-						if filepath.Base(p) == selectWidget.Selected {
-							targetFolder = p
-							break
-						}
-					}
-					if targetFolder != "" {
-						dest := filepath.Join(targetFolder, "AVLedger")
-						if err := db.MoveTo(dest); err != nil {
-							dialog.ShowError(err, w)
-							return
-						}
-						a.Preferences().SetString("dbPath", db.Path)
-						dbPathLabel.SetText(db.Path)
-						dialog.ShowInformation("Success", "Database moved securely and backup initialized.", w)
-					}
-				} else {
-					// If they cancel, we can optionally also mark it as prompted,
-					// or leave it so it prompts next time. 
-					// We'll mark it prompted so it defaults to local storage and doesn't annoy them.
-					a.Preferences().SetBool("cloudPrompted", true)
-				}
-			}, w)
-		}
-	}
-
-	w.ShowAndRun()
 }
-
-// ---- Helpers ----
 
 func reloadEntries(db *database.DB, list *[]models.LogEntry, w fyne.Window, opts models.FilterOptions) {
 	var updated []models.LogEntry
 	var err error
-	if opts.SearchQuery == "" && opts.AircraftEngineType == "" && opts.StartDate == "" && opts.EndDate == "" && opts.Category == "" && opts.JobType == "" {
+	if opts.SearchQuery == "" && opts.AircraftEngineType == "" && opts.StartDate == "" && opts.EndDate == "" && opts.Category == "" && opts.JobType == "" && opts.ATA == "" {
 		updated, err = db.ListEntries()
 	} else {
 		updated, err = db.SearchEntries(opts)
@@ -510,7 +569,7 @@ func exportToPDF(w fyne.Window, db *database.DB, entries *[]models.LogEntry, s m
 		if err != nil || uc == nil {
 			return
 		}
-		uc.Close() // fpdf writes directly to the file path
+		uc.Close()
 
 		path := uc.URI().Path()
 		if err := pdf.Export(path, *entries, s, db); err != nil {
@@ -579,7 +638,6 @@ func detectCloudSyncFolders() []string {
 		filepath.Join(home, "pCloudDrive"),
 	}
 
-	// For Mac, also check Library/CloudStorage
 	if runtime.GOOS == "darwin" {
 		cloudStorage := filepath.Join(home, "Library", "CloudStorage")
 		if entries, err := os.ReadDir(cloudStorage); err == nil {

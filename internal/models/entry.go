@@ -32,3 +32,9 @@ type FilterOptions struct {
 	JobType            string
 	ATA                string
 }
+
+// UserProfile represents a user and their database location.
+type UserProfile struct {
+	Name   string `json:"name"`
+	DBPath string `json:"dbPath"`
+}
