@@ -474,7 +474,7 @@ func showMainApp(a fyne.App, w fyne.Window, customTheme *CustomTheme, profile mo
 		dbPathLabel,
 	)
 
-	versionText := canvas.NewText("0.6.2", theme.DisabledColor())
+	versionText := canvas.NewText("0.7.0", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 
