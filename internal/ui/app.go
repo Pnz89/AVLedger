@@ -87,10 +87,12 @@ func Run() {
 	endDateEntry := widget.NewEntry()
 	endDateEntry.SetPlaceHolder("DD/MM/YYYY")
 	catSelect := widget.NewSelect([]string{"(All)"}, nil)
+	ataSelect := widget.NewSelect([]string{"(All)"}, nil)
 	jobSelect := widget.NewSelect([]string{"(All)"}, nil)
 
 	acSelect.SetSelected("(All)")
 	catSelect.SetSelected("(All)")
+	ataSelect.SetSelected("(All)")
 	jobSelect.SetSelected("(All)")
 
 	updateSelectOptions := func() {
@@ -99,6 +101,21 @@ func Run() {
 		}
 		if opts, _ := db.GetDistinctValues("category"); opts != nil {
 			catSelect.Options = append([]string{"(All)"}, opts...)
+		}
+		if opts, _ := db.GetDistinctValues("ata"); opts != nil {
+			var truncatedOpts []string
+			seen := make(map[string]bool)
+			for _, opt := range opts {
+				val := opt
+				if idx := strings.Index(val, " - "); idx != -1 {
+					val = strings.TrimSpace(val[:idx])
+				}
+				if !seen[val] {
+					seen[val] = true
+					truncatedOpts = append(truncatedOpts, val)
+				}
+			}
+			ataSelect.Options = append([]string{"(All)"}, truncatedOpts...)
 		}
 		if opts, _ := db.GetDistinctValues("job_type"); opts != nil {
 			jobSelect.Options = append([]string{"(All)"}, opts...)
@@ -115,6 +132,10 @@ func Run() {
 		if cat == "(All)" {
 			cat = ""
 		}
+		ata := ataSelect.Selected
+		if ata == "(All)" {
+			ata = ""
+		}
 		job := jobSelect.Selected
 		if job == "(All)" {
 			job = ""
@@ -126,6 +147,7 @@ func Run() {
 			EndDate:            endDateEntry.Text,
 			Category:           cat,
 			JobType:            job,
+			ATA:                ata,
 		}
 	}
 
@@ -193,6 +215,7 @@ func Run() {
 	startDateEntry.OnChanged = func(s string) { refreshAll() }
 	endDateEntry.OnChanged = func(s string) { refreshAll() }
 	catSelect.OnChanged = func(s string) { refreshAll() }
+	ataSelect.OnChanged = func(s string) { refreshAll() }
 	jobSelect.OnChanged = func(s string) { refreshAll() }
 
 	// ---- Toolbar buttons ----
@@ -344,9 +367,10 @@ func Run() {
 		themeBtn,
 	)
 
-	filtersRow := container.NewGridWithColumns(5,
+	filtersRow := container.NewGridWithColumns(6,
 		container.NewBorder(nil, nil, widget.NewLabel("Aircraft:"), nil, acSelect),
 		container.NewBorder(nil, nil, widget.NewLabel("Cat:"), nil, catSelect),
+		container.NewBorder(nil, nil, widget.NewLabel("ATA:"), nil, ataSelect),
 		container.NewBorder(nil, nil, widget.NewLabel("Job:"), nil, jobSelect),
 		container.NewBorder(nil, nil, widget.NewLabel("From:"), nil, startDateEntry),
 		container.NewBorder(nil, nil, widget.NewLabel("To:"), nil, endDateEntry),

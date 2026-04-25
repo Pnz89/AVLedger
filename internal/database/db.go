@@ -277,6 +277,10 @@ func (db *DB) SearchEntries(f models.FilterOptions) ([]models.LogEntry, error) {
 		queryBuilder += ` AND job_type = ?`
 		args = append(args, f.JobType)
 	}
+	if f.ATA != "" {
+		queryBuilder += ` AND ata LIKE ?`
+		args = append(args, f.ATA+"%")
+	}
 
 	queryBuilder += ` ORDER BY id ASC`
 
@@ -363,6 +367,7 @@ func (db *DB) GetDistinctValues(column string) ([]string, error) {
 		"aircraft_engine_type": true,
 		"category":             true,
 		"job_type":             true,
+		"ata":                  true,
 	}
 	if !validCols[column] {
 		return nil, fmt.Errorf("invalid column: %s", column)

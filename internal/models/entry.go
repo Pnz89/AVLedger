@@ -30,4 +30,5 @@ type FilterOptions struct {
 	EndDate            string
 	Category           string
 	JobType            string
+	ATA                string
 }
