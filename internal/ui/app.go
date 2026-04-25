@@ -61,21 +61,49 @@ func showProfileSelector(a fyne.App, w fyne.Window, customTheme *CustomTheme) {
 	if prefStr != "" {
 		_ = json.Unmarshal([]byte(prefStr), &profiles)
 	} else {
-		// Migration for existing single-user setups
+		cloudFolders := detectCloudSyncFolders()
+		
 		legacyPath := a.Preferences().String("dbPath")
-		if legacyPath == "" {
-			// First run migration check
-			cloudFolders := detectCloudSyncFolders()
-			for _, f := range cloudFolders {
-				checkPath := filepath.Join(f, "AVLedger", "avledger.db")
-				if _, err := os.Stat(checkPath); err == nil {
-					legacyPath = checkPath
-					break
+		if legacyPath != "" {
+			profiles = append(profiles, models.UserProfile{Name: "Default", DBPath: legacyPath})
+		}
+
+		for _, f := range cloudFolders {
+			avDir := filepath.Join(f, "AVLedger")
+			if entries, err := os.ReadDir(avDir); err == nil {
+				for _, entry := range entries {
+					if entry.IsDir() {
+						profileDBPath := filepath.Join(avDir, entry.Name(), "avledger.db")
+						if _, err := os.Stat(profileDBPath); err == nil {
+							name := entry.Name()
+							exists := false
+							for _, p := range profiles {
+								if strings.EqualFold(p.Name, name) {
+									exists = true
+									break
+								}
+							}
+							if !exists {
+								profiles = append(profiles, models.UserProfile{Name: name, DBPath: profileDBPath})
+							}
+						}
+					} else if entry.Name() == "avledger.db" {
+						exists := false
+						for _, p := range profiles {
+							if strings.EqualFold(p.Name, "Default") {
+								exists = true
+								break
+							}
+						}
+						if !exists {
+							profiles = append(profiles, models.UserProfile{Name: "Default", DBPath: filepath.Join(avDir, "avledger.db")})
+						}
+					}
 				}
 			}
 		}
-		if legacyPath != "" {
-			profiles = append(profiles, models.UserProfile{Name: "Default", DBPath: legacyPath})
+
+		if len(profiles) > 0 {
 			b, _ := json.Marshal(profiles)
 			a.Preferences().SetString("profiles", string(b))
 		}
