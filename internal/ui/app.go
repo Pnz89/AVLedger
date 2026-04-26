@@ -139,7 +139,9 @@ func showProfileSelector(a fyne.App, w fyne.Window, customTheme *CustomTheme) {
 			
 			btn := row.Objects[2].(*widget.Button)
 			btn.OnTapped = func() {
-				showMainApp(a, w, customTheme, profiles[i], profiles)
+				checkBackupAndRun(a, w, profiles[i], func() {
+					showMainApp(a, w, customTheme, profiles[i], profiles)
+				})
 			}
 		},
 	)
@@ -149,7 +151,9 @@ func showProfileSelector(a fyne.App, w fyne.Window, customTheme *CustomTheme) {
 			b, _ := json.Marshal(profiles)
 			a.Preferences().SetString("profiles", string(b))
 			list.Refresh()
-			showMainApp(a, w, customTheme, newProfile, profiles)
+			checkBackupAndRun(a, w, newProfile, func() {
+				showMainApp(a, w, customTheme, newProfile, profiles)
+			})
 		})
 	})
 	newBtn.Importance = widget.HighImportance
@@ -511,7 +515,7 @@ func showMainApp(a fyne.App, w fyne.Window, customTheme *CustomTheme, profile mo
 		dbPathLabel,
 	)
 
-	versionText := canvas.NewText("0.7.1", theme.DisabledColor())
+	versionText := canvas.NewText("0.8.0", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 
@@ -739,4 +743,40 @@ func migrateProfileToLocal(p *models.UserProfile, cloudFolders []string) {
 	}
 
 	p.DBPath = localDBPath
+}
+
+func checkBackupAndRun(a fyne.App, w fyne.Window, p models.UserProfile, run func()) {
+	if p.BackupPath == "" {
+		run()
+		return
+	}
+
+	backupDBPath := filepath.Join(p.BackupPath, "avledger.db")
+	backupStat, errBackup := os.Stat(backupDBPath)
+
+	if errBackup != nil {
+		// No backup found
+		run()
+		return
+	}
+
+	localStat, errLocal := os.Stat(p.DBPath)
+
+	if errLocal != nil || backupStat.ModTime().After(localStat.ModTime()) {
+		msg := "A newer backup was found in your cloud folder.\nWould you like to import it to your local database?"
+		if errLocal != nil {
+			msg = "An existing backup was found in your cloud folder.\nWould you like to import it to your local database?"
+		}
+		
+		dialog.ShowConfirm("Backup Found", msg, func(confirm bool) {
+			if confirm {
+				os.MkdirAll(filepath.Dir(p.DBPath), 0755)
+				database.CopyFile(backupDBPath, p.DBPath)
+			}
+			run()
+		}, w)
+		return
+	}
+
+	run()
 }

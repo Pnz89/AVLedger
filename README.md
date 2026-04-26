@@ -37,7 +37,7 @@ AMEs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 | 👥 Multi-User Profiles | Support for multiple users sharing the same computer. Create personal profiles, switch between them instantly, and save individual databases locally. |
 | 🔍 Advanced filtering | Instantly narrow down your maintenance history by Aircraft, Category, ATA Chapter, or Job Type. |
 | ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (optimized for black-and-white printing, with smart text wrapping). |
-| ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, OneDrive, Dropbox) to generate secure automatic backups of your local databases whenever the app is closed. |
+| ☁️ Smart Cloud Backup | Automatically detects cloud sync folders to generate secure automatic backups of your local databases whenever the app is closed. If a newer backup from another PC is detected upon startup, AVLedger will safely prompt you to import it. **Compatible with:** Dropbox, Google Drive, OneDrive, Nextcloud, ownCloud, pCloudDrive, and Apple iCloud. |
 | 💽 Hot-swappable DB | Full manual control. Connect to or switch between any local/remote SQLite database files instantly from the UI without restarting. |
 | 🎨 Refined UI | A modern, minimal Fyne-based interface featuring custom themes, freely resizable auxiliary windows, zebra-striped tables, and clear visual hierarchy. |
 | 🪶 Lightweight | Minimal footprint, standalone binaries, no heavy unnecessary dependencies. |
