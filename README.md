@@ -19,7 +19,7 @@ Log your maintenance tasks, export your logbook, move on.
 
 ## Why AVLedger?
 
-AMTs don't have time for bloated interfaces or sluggish exports. AVLedger gets out of the way and does exactly what it says:
+AMEs don't have time for bloated interfaces or sluggish exports. AVLedger gets out of the way and does exactly what it says:
 
 - 🔧 **Track maintenance tasks** — record every job done on every aircraft, clearly and quickly
 - 📄 **Export to PDF in seconds** — because paperwork should never be the bottleneck

@@ -58,10 +58,14 @@ func getLogoImage(a fyne.App) *canvas.Image {
 func showProfileSelector(a fyne.App, w fyne.Window, customTheme *CustomTheme) {
 	var profiles []models.UserProfile
 	prefStr := a.Preferences().String("profiles")
+	cloudFolders := detectCloudSyncFolders()
 	if prefStr != "" {
 		_ = json.Unmarshal([]byte(prefStr), &profiles)
+		for i := range profiles {
+			migrateProfileToLocal(&profiles[i], cloudFolders)
+		}
+		saveProfiles(a, profiles)
 	} else {
-		cloudFolders := detectCloudSyncFolders()
 		
 		legacyPath := a.Preferences().String("dbPath")
 		if legacyPath != "" {
@@ -103,9 +107,12 @@ func showProfileSelector(a fyne.App, w fyne.Window, customTheme *CustomTheme) {
 			}
 		}
 
+		for i := range profiles {
+			migrateProfileToLocal(&profiles[i], cloudFolders)
+		}
+
 		if len(profiles) > 0 {
-			b, _ := json.Marshal(profiles)
-			a.Preferences().SetString("profiles", string(b))
+			saveProfiles(a, profiles)
 		}
 	}
 
@@ -165,17 +172,17 @@ func showNewProfileDialog(a fyne.App, w fyne.Window, profiles *[]models.UserProf
 	nameEntry.SetPlaceHolder("E.g. Mario Rossi")
 
 	cloudFolders := detectCloudSyncFolders()
-	options := []string{"Local Storage (Default)"}
+	options := []string{"None (Local Only)"}
 	for _, p := range cloudFolders {
 		options = append(options, filepath.Base(p))
 	}
 
-	storageSelect := widget.NewSelect(options, nil)
-	storageSelect.SetSelected(options[0])
+	backupSelect := widget.NewSelect(options, nil)
+	backupSelect.SetSelected(options[0])
 
 	items := []*widget.FormItem{
 		widget.NewFormItem("Profile Name", nameEntry),
-		widget.NewFormItem("Save Location", storageSelect),
+		widget.NewFormItem("Cloud Backup", backupSelect),
 	}
 
 	dialog.ShowForm("Create New Profile", "Create", "Cancel", items, func(confirm bool) {
@@ -195,26 +202,21 @@ func showNewProfileDialog(a fyne.App, w fyne.Window, profiles *[]models.UserProf
 			}
 		}
 
-		var dir string
-		if storageSelect.Selected == "Local Storage (Default)" {
-			dataDir, err := os.UserConfigDir()
-			if err != nil {
-				dataDir, _ = os.UserHomeDir()
-			}
-			dir = filepath.Join(dataDir, "avledger", "profiles", name)
-		} else {
+		dir := getLocalProfileDir(name)
+		os.MkdirAll(dir, 0755)
+		dbPath := filepath.Join(dir, "avledger.db")
+
+		var backupPath string
+		if backupSelect.Selected != "None (Local Only)" {
 			for _, p := range cloudFolders {
-				if filepath.Base(p) == storageSelect.Selected {
-					dir = filepath.Join(p, "AVLedger", name)
+				if filepath.Base(p) == backupSelect.Selected {
+					backupPath = filepath.Join(p, "AVLedger", name)
 					break
 				}
 			}
 		}
 
-		os.MkdirAll(dir, 0755)
-		dbPath := filepath.Join(dir, "avledger.db")
-
-		newProfile := models.UserProfile{Name: name, DBPath: dbPath}
+		newProfile := models.UserProfile{Name: name, DBPath: dbPath, BackupPath: backupPath}
 		*profiles = append(*profiles, newProfile)
 		onCreated(newProfile)
 
@@ -488,8 +490,15 @@ func showMainApp(a fyne.App, w fyne.Window, customTheme *CustomTheme, profile mo
 		widget.ShowPopUpMenuAtPosition(manageMenu, w.Canvas(), pos)
 	}
 
-	switchProfileBtn := widget.NewButtonWithIcon("Switch Profile", theme.AccountIcon(), func() {
+	w.SetOnClosed(func() {
 		db.Close()
+		backupProfile(profile)
+	})
+
+	switchProfileBtn := widget.NewButtonWithIcon("Switch Profile", theme.AccountIcon(), func() {
+		w.SetOnClosed(nil)
+		db.Close()
+		backupProfile(profile)
 		showProfileSelector(a, w, customTheme)
 	})
 	switchProfileBtn.Importance = widget.WarningImportance
@@ -502,7 +511,7 @@ func showMainApp(a fyne.App, w fyne.Window, customTheme *CustomTheme, profile mo
 		dbPathLabel,
 	)
 
-	versionText := canvas.NewText("0.7.0", theme.DisabledColor())
+	versionText := canvas.NewText("0.7.1", theme.DisabledColor())
 	versionText.TextSize = 12
 	versionText.TextStyle = fyne.TextStyle{Bold: true}
 
@@ -685,4 +694,49 @@ func detectCloudSyncFolders() []string {
 	}
 
 	return found
+}
+
+func getLocalProfileDir(name string) string {
+	dataDir, err := os.UserConfigDir()
+	if err != nil {
+		dataDir, _ = os.UserHomeDir()
+	}
+	return filepath.Join(dataDir, "avledger", "profiles", name)
+}
+
+func backupProfile(p models.UserProfile) {
+	if p.BackupPath == "" {
+		return
+	}
+	os.MkdirAll(p.BackupPath, 0755)
+	dest := filepath.Join(p.BackupPath, "avledger.db")
+	database.CopyFile(p.DBPath, dest)
+}
+
+func migrateProfileToLocal(p *models.UserProfile, cloudFolders []string) {
+	localDir := getLocalProfileDir(p.Name)
+	localDBPath := filepath.Join(localDir, "avledger.db")
+
+	if p.DBPath == localDBPath {
+		return
+	}
+
+	isCloud := false
+	for _, cf := range cloudFolders {
+		if strings.HasPrefix(p.DBPath, cf) {
+			isCloud = true
+			break
+		}
+	}
+
+	if _, err := os.Stat(p.DBPath); err == nil {
+		os.MkdirAll(localDir, 0755)
+		database.CopyFile(p.DBPath, localDBPath)
+	}
+
+	if isCloud && p.BackupPath == "" {
+		p.BackupPath = filepath.Dir(p.DBPath)
+	}
+
+	p.DBPath = localDBPath
 }

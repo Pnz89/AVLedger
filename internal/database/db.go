@@ -139,6 +139,27 @@ func moveFile(src, dst string) error {
 	return os.Remove(src)
 }
 
+// CopyFile copies a file from src to dst.
+func CopyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+	return out.Sync()
+}
+
 // migrate creates the schema if it does not exist.
 func (db *DB) migrate() error {
 	_, err := db.conn.Exec(`
