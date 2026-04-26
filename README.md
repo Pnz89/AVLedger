@@ -34,10 +34,10 @@ AMEs don't have time for bloated interfaces or sluggish exports. AVLedger gets o
 | 🔧 Task logging | Record maintenance work efficiently including precise Task Duration, ATA, Job Type, Workorders etc. |
 | ✈️ Aircraft Management | Build and manage a list of aircraft (Type, Registration). Select aircraft directly from dropdowns when logging tasks to ensure data consistency. |
 | 📋 Assessor Management | Store and manage Assessor details (Name, License, Company Approval). Quickly select them on tasks, and automatically expand their full details on PDF export. |
-| 👥 Multi-User Profiles | Support for multiple users sharing the same computer. Create personal profiles, switch between them instantly, and save individual databases locally or directly to cloud folders. |
+| 👥 Multi-User Profiles | Support for multiple users sharing the same computer. Create personal profiles, switch between them instantly, and save individual databases locally. |
 | 🔍 Advanced filtering | Instantly narrow down your maintenance history by Aircraft, Category, ATA Chapter, or Job Type. |
 | ⚡ Fast PDF export | Generate beautifully styled, ready-to-print PDF logbooks seamlessly (optimized for black-and-white printing, with smart text wrapping). |
-| ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, OneDrive, Dropbox). Features **Auto-Discovery** to "magically" reconnect to an existing cloud database on fresh installations without user intervention. |
+| ☁️ Smart Cloud Backup | Automatically detects cloud sync folders (Nextcloud, Google Drive, OneDrive, Dropbox) to generate secure automatic backups of your local databases whenever the app is closed. |
 | 💽 Hot-swappable DB | Full manual control. Connect to or switch between any local/remote SQLite database files instantly from the UI without restarting. |
 | 🎨 Refined UI | A modern, minimal Fyne-based interface featuring custom themes, freely resizable auxiliary windows, zebra-striped tables, and clear visual hierarchy. |
 | 🪶 Lightweight | Minimal footprint, standalone binaries, no heavy unnecessary dependencies. |
